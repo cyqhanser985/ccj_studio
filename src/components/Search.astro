@@ -54,12 +54,40 @@
   // 加载内容数据
   async function loadContentData() {
     try {
+      // 首先尝试使用fetch API
       const response = await fetch('/search-data.json');
-      allContent = await response.json();
-      // 初始化 Fuse 实例
-      fuse = new Fuse(allContent, fuseOptions);
+      
+      // 检查响应状态
+      if (!response.ok) {
+        throw new Error(`HTTP 错误! 状态: ${response.status}`);
+      }
+      
+      // 解析JSON数据
+      const data = await response.json();
+      
+      // 确保数据有效性
+      if (Array.isArray(data)) {
+        allContent = data;
+        
+        // 初始化 Fuse 实例
+        fuse = new Fuse(allContent, fuseOptions);
+        console.log('搜索数据加载成功:', allContent.length, '条记录');
+      } else {
+        console.error('搜索数据格式无效:', data);
+      }
     } catch (error) {
       console.error('加载搜索数据失败:', error);
+      
+      // 使用备用策略 - 如果在生产环境中，这可以是一个备用措施
+      try {
+        // 如果没有数据，显示通知或禁用搜索
+        if (searchInput) {
+          searchInput.placeholder = '搜索功能临时不可用';
+          searchInput.disabled = true;
+        }
+      } catch (fallbackError) {
+        console.error('备用错误处理也失败:', fallbackError);
+      }
     }
   }
   
@@ -70,7 +98,13 @@
       return;
     }
     
-    if (!fuse) return;
+    if (!fuse) {
+      // 如果fuse实例不可用，尝试再次加载数据
+      loadContentData().then(() => {
+        if (fuse) performSearch(query);
+      });
+      return;
+    }
     
     const results = fuse.search(query);
     displayResults(results);

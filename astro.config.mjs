@@ -5,6 +5,7 @@ import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
 import { rehypeHeadingIds } from '@astrojs/markdown-remark';
 import rehypePrettyCode from 'rehype-pretty-code';
+import searchIndexIntegration from './src/integrations/search-index.ts';
 
 // 定义节点类型以避免隐式any错误
 /**
@@ -64,7 +65,10 @@ const katexOptions = {
 
 // https://astro.build/config
 export default defineConfig({
-  integrations: [tailwind()],
+  integrations: [
+    tailwind(),
+    searchIndexIntegration()
+  ],
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [
