@@ -1,6 +1,6 @@
 ---
 title: '我的第一篇学习笔记'
-date: '2023-11-15'
+date: 2023-11-15
 category: '学习'
 tags: ['Astro', 'Markdown']
 ---
@@ -22,4 +22,4 @@ def hello():
 
 数学公式示例：
 
-$$ a^2 + b^2 = c^2 $$
+$$ a^2 + b^2 = c^2 $$ 

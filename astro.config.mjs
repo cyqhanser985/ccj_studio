@@ -1,6 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import tailwindcss from '@tailwindcss/vite';
+import tailwind from '@astrojs/tailwind';
 import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
 import { rehypeHeadingIds } from '@astrojs/markdown-remark';
@@ -44,15 +44,31 @@ const prettyCodeOptions = {
   },
 };
 
+// KaTeX配置选项
+const katexOptions = {
+  // 启用所有可用的KaTeX扩展
+  strict: false,
+  throwOnError: false,
+  displayMode: false,
+  trust: true,
+  macros: {
+    // 添加常用宏
+    "\\RR": "\\mathbb{R}",
+    "\\NN": "\\mathbb{N}",
+    "\\ZZ": "\\mathbb{Z}"
+  },
+  // 启用所有Katex的扩展包
+  fleqn: false,
+  output: 'html'
+};
+
 // https://astro.build/config
 export default defineConfig({
-  vite: {
-    plugins: [tailwindcss()]
-  },
+  integrations: [tailwind()],
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [
-      rehypeKatex, 
+      [rehypeKatex, katexOptions], 
       rehypeHeadingIds,
       [rehypePrettyCode, prettyCodeOptions]
     ],

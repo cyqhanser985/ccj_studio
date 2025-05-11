@@ -9,8 +9,8 @@ type ContentEntry = BlogEntry | NotesEntry;
 
 export async function getStaticPaths() {
   // 获取所有文章和笔记
-  const blogEntries = await getCollection('blog', ({ data }: BlogEntry) => !data.draft);
-  const notesEntries = await getCollection('notes', ({ data }: NotesEntry) => !data.draft);
+  const blogEntries = await getCollection('blog', ({ data }) => !data.draft);
+  const notesEntries = await getCollection('notes', ({ data }) => !data.draft);
   
   // 合并所有内容
   const allEntries = [...blogEntries, ...notesEntries];
@@ -64,10 +64,9 @@ function formatDate(date: Date): string {
     </header>
 
     <div class="space-y-6">
-      {sortedEntries.map((entry: ContentEntry) => {
+      {sortedEntries.map((entry) => {
         // 确定条目的类型和链接
-        const collectionType = 'collection' in entry ? entry.collection : 
-          (entry.id.startsWith('blog/') ? 'blog' : 'notes');
+        const collectionType = entry.collection;
         const entryLink = `/${collectionType}/${entry.slug}`;
         
         return (
@@ -89,7 +88,7 @@ function formatDate(date: Date): string {
             </div>
             {entry.data.tags && entry.data.tags.length > 0 && (
               <div class="flex flex-wrap gap-2 mt-2">
-                {entry.data.tags.map((tag: string) => (
+                {entry.data.tags.map(tag => (
                   <a 
                     href={`/tag/${tag.toLowerCase()}`}
                     class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded hover:bg-blue-200"

@@ -2,15 +2,15 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 
-// 定义条目类型
+// 定义条目类型，使类型更明确
 type BlogEntry = CollectionEntry<'blog'>;
 type NotesEntry = CollectionEntry<'notes'>;
 type ContentEntry = BlogEntry | NotesEntry;
 
 export async function getStaticPaths() {
   // 获取所有文章和笔记
-  const blogEntries = await getCollection('blog', ({ data }: BlogEntry) => !data.draft);
-  const notesEntries = await getCollection('notes', ({ data }: NotesEntry) => !data.draft);
+  const blogEntries = await getCollection('blog', ({ data }) => !data.draft);
+  const notesEntries = await getCollection('notes', ({ data }) => !data.draft);
   
   // 合并所有内容
   const allEntries = [...blogEntries, ...notesEntries];
@@ -23,18 +23,20 @@ export async function getStaticPaths() {
   return uniqueTags.map(tag => {
     // 过滤出带有此标签的所有内容
     const filteredEntries = allEntries.filter(
-      entry => entry.data.tags?.some((t: string) => t.toLowerCase() === tag)
+      entry => entry.data.tags?.some(t => t.toLowerCase() === tag)
     );
+    
+    // 找到原始大小写的标签名称
+    const tagWithOriginalCase = filteredEntries[0]?.data.tags?.find(t => 
+      t.toLowerCase() === tag
+    ) || tag;
     
     return {
       params: { tag },
       props: { 
         tag, 
         entries: filteredEntries,
-        // 使用第一个条目中的标签名称（原始大小写）来显示
-        tagDisplay: filteredEntries[0]?.data.tags?.find((t: string) => 
-          t.toLowerCase() === tag
-        ) || tag
+        tagDisplay: tagWithOriginalCase
       }
     };
   });
@@ -66,10 +68,9 @@ function formatDate(date: Date): string {
     </header>
 
     <div class="space-y-6">
-      {sortedEntries.map((entry: ContentEntry) => {
+      {sortedEntries.map((entry) => {
         // 确定条目的类型和链接
-        const collectionType = 'collection' in entry ? entry.collection : 
-          (entry.id.startsWith('blog/') ? 'blog' : 'notes');
+        const collectionType = entry.collection;
         const entryLink = `/${collectionType}/${entry.slug}`;
         
         return (
@@ -100,8 +101,8 @@ function formatDate(date: Date): string {
             {entry.data.tags && entry.data.tags.length > 0 && (
               <div class="flex flex-wrap gap-2 mt-2">
                 {entry.data.tags
-                  .filter((t: string) => t.toLowerCase() !== tag)
-                  .map((otherTag: string) => (
+                  .filter(t => t.toLowerCase() !== tag)
+                  .map(otherTag => (
                     <a 
                       href={`/tag/${otherTag.toLowerCase()}`}
                       class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded hover:bg-blue-200"
