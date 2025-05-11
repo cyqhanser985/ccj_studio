@@ -1,0 +1,40 @@
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all hover:shadow-lg">
+  <div class="flex flex-col md:flex-row">
+    <!-- 头像部分 -->
+    <div class="w-full md:w-1/3 relative">
+      <img 
+        src="/preview.jpg" 
+        alt="博主头像" 
+        class="w-full h-full md:h-auto object-cover" 
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent md:hidden flex items-end">
+        <h3 class="text-white text-xl font-bold px-4 py-2">博主信息</h3>
+      </div>
+    </div>
+    
+    <!-- 个人简介部分 -->
+    <div class="w-full md:w-2/3 p-6">
+      <h3 class="text-xl font-bold mb-2 hidden md:block text-gray-900 dark:text-white">博主信息</h3>
+      <p class="text-gray-700 dark:text-gray-300 mb-4">热爱学习与分享的技术爱好者，致力于探索和整理知识体系，通过这个博客记录学习历程。</p>
+      
+      <div class="flex flex-wrap gap-3">
+        <a 
+          href="/about" 
+          class="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+          </svg>
+          关于我
+        </a>
+        
+        <span class="inline-flex items-center text-sm text-gray-600 dark:text-gray-400">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
+          </svg>
+          计算机科学 / 数学爱好者
+        </span>
+      </div>
+    </div>
+  </div>
+</div> 

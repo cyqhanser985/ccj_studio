@@ -1,6 +1,8 @@
 ---
 import { getCollection, type CollectionEntry } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
+import PostCard from '../components/PostCard.astro';
+import AuthorCard from '../components/AuthorCard.astro';
 
 // 定义条目类型
 type BlogEntry = CollectionEntry<'blog'>;
@@ -45,53 +47,47 @@ function formatDate(date: Date): string {
 <Layout title="首页">
   <div class="max-w-6xl mx-auto">
     <!-- 欢迎区域 -->
-    <section class="mb-12 text-center py-16 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg shadow-xl">
-      <h1 class="text-4xl md:text-5xl font-bold mb-6">欢迎来到个人学习Studio</h1>
-      <p class="text-xl md:text-2xl max-w-3xl mx-auto mb-8">记录、组织和回顾个人学习历程中的知识点</p>
-      <div class="flex flex-wrap justify-center gap-4">
-        <a href="/blog" class="bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-full font-semibold transition-colors">
-          浏览博客文章
-        </a>
-        <a href="/notes" class="bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-600 px-6 py-3 rounded-full font-semibold transition-colors">
-          查看学习笔记
-        </a>
+    <section class="mb-12 text-center p-12 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg shadow-xl">
+      <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl md:text-5xl font-bold mb-6">欢迎来到个人学习Studio</h1>
+        <p class="text-xl md:text-2xl mb-8">记录、组织和回顾个人学习历程中的知识点</p>
+        <div class="flex flex-wrap justify-center gap-4">
+          <a href="/blog" class="bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-full font-semibold transition-all transform hover:scale-105">
+            浏览博客文章
+          </a>
+          <a href="/notes" class="bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-600 px-6 py-3 rounded-full font-semibold transition-all transform hover:scale-105">
+            查看学习笔记
+          </a>
+        </div>
       </div>
     </section>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- 最新博客文章 -->
+      <!-- 主要内容区域 -->
       <div class="lg:col-span-2">
-        <section class="mb-10">
+        <!-- 作者简介 - 只在首页显示 -->
+        <div class="mb-10">
+          <AuthorCard />
+        </div>
+        
+        <!-- 最新博客文章 -->
+        <section class="mb-12">
           <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold">最新博客文章</h2>
-            <a href="/blog" class="text-blue-600 hover:underline">查看全部</a>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">最新博客文章</h2>
+            <a href="/blog" class="text-blue-600 dark:text-blue-400 hover:underline">查看全部</a>
           </div>
           
           <div class="space-y-6">
-            {recentBlogs.map((blog: BlogEntry) => (
-              <article class="border-b border-gray-200 pb-6">
-                <h3 class="text-xl font-semibold mb-2">
-                  <a href={`/blog/${blog.slug}`} class="text-blue-700 hover:underline">
-                    {blog.data.title}
-                  </a>
-                </h3>
-                {blog.data.description && (
-                  <p class="text-gray-600 mb-3">{blog.data.description}</p>
-                )}
-                <div class="flex items-center text-sm text-gray-500">
-                  <time datetime={blog.data.date.toISOString()}>
-                    {formatDate(blog.data.date)}
-                  </time>
-                  {blog.data.category && (
-                    <>
-                      <span class="mx-2">|</span>
-                      <a href={`/category/${blog.data.category.toLowerCase()}`} class="text-blue-600 hover:underline">
-                        {blog.data.category}
-                      </a>
-                    </>
-                  )}
-                </div>
-              </article>
+            {recentBlogs.map((blog: BlogEntry, index) => (
+              <PostCard 
+                title={blog.data.title}
+                description={blog.data.description}
+                url={`/blog/${blog.slug}`}
+                date={blog.data.date}
+                category={blog.data.category}
+                tags={blog.data.tags}
+                featured={index === 0}
+              />
             ))}
           </div>
         </section>
@@ -99,39 +95,20 @@ function formatDate(date: Date): string {
         <!-- 最新学习笔记 -->
         <section>
           <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold">最新学习笔记</h2>
-            <a href="/notes" class="text-blue-600 hover:underline">查看全部</a>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">最新学习笔记</h2>
+            <a href="/notes" class="text-blue-600 dark:text-blue-400 hover:underline">查看全部</a>
           </div>
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             {recentNotes.map((note: NotesEntry) => (
-              <article class="bg-white p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                <h3 class="text-lg font-semibold mb-2">
-                  <a href={`/notes/${note.slug}`} class="text-blue-700 hover:underline">
-                    {note.data.title}
-                  </a>
-                </h3>
-                <div class="flex items-center text-sm text-gray-500 mb-2">
-                  <time datetime={note.data.date.toISOString()}>
-                    {formatDate(note.data.date)}
-                  </time>
-                </div>
-                {note.data.tags && note.data.tags.length > 0 && (
-                  <div class="flex flex-wrap gap-2">
-                    {note.data.tags.slice(0, 3).map((tag: string) => (
-                      <a 
-                        href={`/tag/${tag.toLowerCase()}`}
-                        class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded hover:bg-blue-200"
-                      >
-                        {tag}
-                      </a>
-                    ))}
-                    {note.data.tags.length > 3 && (
-                      <span class="text-xs text-gray-500">+{note.data.tags.length - 3}</span>
-                    )}
-                  </div>
-                )}
-              </article>
+              <PostCard 
+                title={note.data.title}
+                description={note.data.description}
+                url={`/notes/${note.slug}`}
+                date={note.data.date}
+                category={note.data.category}
+                tags={note.data.tags}
+              />
             ))}
           </div>
         </section>
@@ -140,17 +117,17 @@ function formatDate(date: Date): string {
       <!-- 侧边栏 -->
       <div class="lg:col-span-1">
         <!-- 分类列表 -->
-        <section class="bg-white p-6 rounded-lg shadow-sm mb-8">
-          <h2 class="text-xl font-bold mb-4 pb-2 border-b">分类</h2>
+        <section class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-8">
+          <h2 class="text-xl font-bold mb-4 pb-2 border-b dark:border-gray-700 text-gray-900 dark:text-white">分类</h2>
           <ul class="space-y-2">
             {categories.map((category) => (
               <li>
                 <a 
                   href={`/category/${category.toLowerCase()}`} 
-                  class="flex justify-between items-center text-blue-600 hover:underline"
+                  class="flex justify-between items-center text-blue-600 dark:text-blue-400 hover:underline"
                 >
                   <span>{category}</span>
-                  <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                  <span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded">
                     {allEntries.filter((entry) => entry.data.category === category).length}
                   </span>
                 </a>
@@ -160,23 +137,54 @@ function formatDate(date: Date): string {
         </section>
         
         <!-- 标签云 -->
-        <section class="bg-white p-6 rounded-lg shadow-sm">
-          <h2 class="text-xl font-bold mb-4 pb-2 border-b">标签云</h2>
+        <section class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
+          <h2 class="text-xl font-bold mb-4 pb-2 border-b dark:border-gray-700 text-gray-900 dark:text-white">标签云</h2>
           <div class="flex flex-wrap gap-2">
             {uniqueTags.map((tag) => (
               <a 
                 href={`/tag/${String(tag).toLowerCase()}`}
-                class="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded hover:bg-blue-200"
+                class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm px-3 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
               >
                 {tag}
               </a>
             ))}
             {allTags.length > uniqueTags.length && (
-              <a href="/tags" class="text-blue-600 hover:underline text-sm">
+              <a href="/tags" class="text-blue-600 dark:text-blue-400 hover:underline text-sm">
                 查看全部标签
               </a>
             )}
           </div>
+        </section>
+        
+        <!-- 快速链接卡片 -->
+        <section class="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-6 rounded-lg shadow-sm mt-8">
+          <h2 class="text-xl font-bold mb-4 pb-2 border-b border-white/20">快速访问</h2>
+          <ul class="space-y-3">
+            <li>
+              <a href="/about" class="flex items-center hover:translate-x-1 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                </svg>
+                关于本站
+              </a>
+            </li>
+            <li>
+              <a href="/blog" class="flex items-center hover:translate-x-1 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                </svg>
+                博客文章
+              </a>
+            </li>
+            <li>
+              <a href="/notes" class="flex items-center hover:translate-x-1 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                </svg>
+                学习笔记
+              </a>
+            </li>
+          </ul>
         </section>
       </div>
     </div>
