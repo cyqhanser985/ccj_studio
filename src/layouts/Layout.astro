@@ -1,0 +1,29 @@
+---
+import '../styles/global.css';
+const { title } = Astro.props;
+---
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Astro description" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+  </head>
+  <body class="bg-gray-100 text-gray-900 flex flex-col min-h-screen">
+    <header class="bg-blue-600 text-white p-4">
+      <div class="container mx-auto">
+        <h1 class="text-xl">我的 Astro 博客</h1>
+        <!-- 导航链接可以在这里添加 -->
+      </div>
+    </header>
+    <main class="flex-grow container mx-auto p-4">
+      <slot />
+    </main>
+    <footer class="bg-gray-800 text-white p-4 text-center">
+      <p>&copy; {new Date().getFullYear()} 我的博客. 保留所有权利.</p>
+    </footer>
+  </body>
+</html>
