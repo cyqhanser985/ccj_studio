@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import Search from '../components/Search.astro';
 const { title } = Astro.props;
 
 // 活动页面路径
@@ -25,7 +26,12 @@ const currentPath = Astro.url.pathname;
             <a href="/" class="text-2xl font-bold">个人学习Studio</a>
           </div>
           <div class="flex items-center">
-            <nav class="mr-4">
+            <!-- 搜索组件 -->
+            <div class="mr-4 w-full md:w-64 lg:w-80">
+              <Search />
+            </div>
+            
+            <nav class="mr-4 hidden md:block">
               <ul class="flex space-x-6">
                 <li>
                   <a 
@@ -61,6 +67,14 @@ const currentPath = Astro.url.pathname;
                 </li>
               </ul>
             </nav>
+            
+            <!-- 移动端菜单按钮 -->
+            <button id="mobile-menu-toggle" class="md:hidden p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 mr-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            
             <!-- 暗黑模式切换按钮 -->
             <button id="theme-toggle" class="rounded-full p-2 bg-blue-500 dark:bg-blue-700 hover:bg-blue-400 dark:hover:bg-blue-600">
               <svg xmlns="http://www.w3.org/2000/svg" id="sun-icon" class="h-5 w-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,6 +85,36 @@ const currentPath = Astro.url.pathname;
               </svg>
             </button>
           </div>
+        </div>
+        
+        <!-- 移动端菜单内容 -->
+        <div id="mobile-menu" class="mt-4 hidden md:hidden">
+          <nav class="flex flex-col space-y-4">
+            <a 
+              href="/" 
+              class={`block py-2 px-4 rounded-md hover:bg-blue-700 ${currentPath === '/' ? 'font-bold bg-blue-700' : ''}`}
+            >
+              首页
+            </a>
+            <a 
+              href="/blog" 
+              class={`block py-2 px-4 rounded-md hover:bg-blue-700 ${currentPath === '/blog' || currentPath.startsWith('/blog/') ? 'font-bold bg-blue-700' : ''}`}
+            >
+              博客文章
+            </a>
+            <a 
+              href="/notes" 
+              class={`block py-2 px-4 rounded-md hover:bg-blue-700 ${currentPath === '/notes' || currentPath.startsWith('/notes/') ? 'font-bold bg-blue-700' : ''}`}
+            >
+              学习笔记
+            </a>
+            <a 
+              href="/about" 
+              class={`block py-2 px-4 rounded-md hover:bg-blue-700 ${currentPath === '/about' ? 'font-bold bg-blue-700' : ''}`}
+            >
+              关于
+            </a>
+          </nav>
         </div>
       </div>
     </header>
@@ -112,15 +156,26 @@ const currentPath = Astro.url.pathname;
       }
       
       // 添加切换事件
-      themeToggleBtn.addEventListener('click', function() {
-        if (htmlElement.classList.contains('dark')) {
-          htmlElement.classList.remove('dark');
-          localStorage.setItem('theme', 'light');
-        } else {
+      if (themeToggleBtn) 
+        themeToggleBtn.addEventListener('click', function() {
+          if (htmlElement.classList.contains('dark')) {
+            htmlElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+          } else {
           htmlElement.classList.add('dark');
           localStorage.setItem('theme', 'dark');
         }
       });
+      
+      // 移动端菜单切换
+      const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+      const mobileMenu = document.getElementById('mobile-menu');
+      
+      if (mobileMenuToggle && mobileMenu) {
+        mobileMenuToggle.addEventListener('click', function() {
+          mobileMenu.classList.toggle('hidden');
+        });
+      }
     </script>
   </body>
 </html>
