@@ -1,14 +1,184 @@
 ---
+import { getCollection, type CollectionEntry } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
+
+// 定义条目类型
+type BlogEntry = CollectionEntry<'blog'>;
+type NotesEntry = CollectionEntry<'notes'>;
+
+// 获取博客文章和笔记
+const blogEntries = await getCollection('blog', ({ data }: BlogEntry) => !data.draft);
+const notesEntries = await getCollection('notes', ({ data }: NotesEntry) => !data.draft);
+
+// 按日期排序
+const recentBlogs = blogEntries
+  .sort((a: BlogEntry, b: BlogEntry) => 
+    new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+  )
+  .slice(0, 3);
+
+const recentNotes = notesEntries
+  .sort((a: NotesEntry, b: NotesEntry) => 
+    new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+  )
+  .slice(0, 3);
+
+// 获取所有独特的分类和标签
+const allEntries = [...blogEntries, ...notesEntries];
+const categories = [...new Set(allEntries
+  .filter((entry) => entry.data.category)
+  .map((entry) => entry.data.category))] as string[];
+
+const allTags = allEntries.flatMap((entry) => entry.data.tags || []);
+const uniqueTags = [...new Set(allTags)].slice(0, 10); // 只显示前10个标签
+
+// 格式化日期的函数
+function formatDate(date: Date): string {
+  return new Date(date).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
 ---
 
-<Layout title="ccj - 首页">
-  <h1 class="text-3xl font-bold mb-4">欢迎来到 ccj 的博客!</h1>
-  <p class="mb-2">这是一个使用 Astro 和 Tailwind CSS 构建的简单博客首页。</p>
-  <p>你认识ccj吗？</p>
-  <nav class="mt-4">
-    <a href="/" class="text-blue-600 hover:underline mr-4">首页</a>
-    <a href="/about/" class="text-blue-600 hover:underline mr-4">关于</a>
-    <a href="/blog/" class="text-blue-600 hover:underline">博客</a>
-  </nav>
+<Layout title="首页">
+  <div class="max-w-6xl mx-auto">
+    <!-- 欢迎区域 -->
+    <section class="mb-12 text-center py-16 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg shadow-xl">
+      <h1 class="text-4xl md:text-5xl font-bold mb-6">欢迎来到个人学习Studio</h1>
+      <p class="text-xl md:text-2xl max-w-3xl mx-auto mb-8">记录、组织和回顾个人学习历程中的知识点</p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <a href="/blog" class="bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-full font-semibold transition-colors">
+          浏览博客文章
+        </a>
+        <a href="/notes" class="bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-600 px-6 py-3 rounded-full font-semibold transition-colors">
+          查看学习笔记
+        </a>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- 最新博客文章 -->
+      <div class="lg:col-span-2">
+        <section class="mb-10">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">最新博客文章</h2>
+            <a href="/blog" class="text-blue-600 hover:underline">查看全部</a>
+          </div>
+          
+          <div class="space-y-6">
+            {recentBlogs.map((blog: BlogEntry) => (
+              <article class="border-b border-gray-200 pb-6">
+                <h3 class="text-xl font-semibold mb-2">
+                  <a href={`/blog/${blog.slug}`} class="text-blue-700 hover:underline">
+                    {blog.data.title}
+                  </a>
+                </h3>
+                {blog.data.description && (
+                  <p class="text-gray-600 mb-3">{blog.data.description}</p>
+                )}
+                <div class="flex items-center text-sm text-gray-500">
+                  <time datetime={blog.data.date.toISOString()}>
+                    {formatDate(blog.data.date)}
+                  </time>
+                  {blog.data.category && (
+                    <>
+                      <span class="mx-2">|</span>
+                      <a href={`/category/${blog.data.category.toLowerCase()}`} class="text-blue-600 hover:underline">
+                        {blog.data.category}
+                      </a>
+                    </>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+        
+        <!-- 最新学习笔记 -->
+        <section>
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">最新学习笔记</h2>
+            <a href="/notes" class="text-blue-600 hover:underline">查看全部</a>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {recentNotes.map((note: NotesEntry) => (
+              <article class="bg-white p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                <h3 class="text-lg font-semibold mb-2">
+                  <a href={`/notes/${note.slug}`} class="text-blue-700 hover:underline">
+                    {note.data.title}
+                  </a>
+                </h3>
+                <div class="flex items-center text-sm text-gray-500 mb-2">
+                  <time datetime={note.data.date.toISOString()}>
+                    {formatDate(note.data.date)}
+                  </time>
+                </div>
+                {note.data.tags && note.data.tags.length > 0 && (
+                  <div class="flex flex-wrap gap-2">
+                    {note.data.tags.slice(0, 3).map((tag: string) => (
+                      <a 
+                        href={`/tag/${tag.toLowerCase()}`}
+                        class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded hover:bg-blue-200"
+                      >
+                        {tag}
+                      </a>
+                    ))}
+                    {note.data.tags.length > 3 && (
+                      <span class="text-xs text-gray-500">+{note.data.tags.length - 3}</span>
+                    )}
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+      </div>
+      
+      <!-- 侧边栏 -->
+      <div class="lg:col-span-1">
+        <!-- 分类列表 -->
+        <section class="bg-white p-6 rounded-lg shadow-sm mb-8">
+          <h2 class="text-xl font-bold mb-4 pb-2 border-b">分类</h2>
+          <ul class="space-y-2">
+            {categories.map((category) => (
+              <li>
+                <a 
+                  href={`/category/${category.toLowerCase()}`} 
+                  class="flex justify-between items-center text-blue-600 hover:underline"
+                >
+                  <span>{category}</span>
+                  <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                    {allEntries.filter((entry) => entry.data.category === category).length}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+        
+        <!-- 标签云 -->
+        <section class="bg-white p-6 rounded-lg shadow-sm">
+          <h2 class="text-xl font-bold mb-4 pb-2 border-b">标签云</h2>
+          <div class="flex flex-wrap gap-2">
+            {uniqueTags.map((tag) => (
+              <a 
+                href={`/tag/${String(tag).toLowerCase()}`}
+                class="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded hover:bg-blue-200"
+              >
+                {tag}
+              </a>
+            ))}
+            {allTags.length > uniqueTags.length && (
+              <a href="/tags" class="text-blue-600 hover:underline text-sm">
+                查看全部标签
+              </a>
+            )}
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
 </Layout>

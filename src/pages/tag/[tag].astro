@@ -1,0 +1,120 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+
+// 定义条目类型
+type BlogEntry = CollectionEntry<'blog'>;
+type NotesEntry = CollectionEntry<'notes'>;
+type ContentEntry = BlogEntry | NotesEntry;
+
+export async function getStaticPaths() {
+  // 获取所有文章和笔记
+  const blogEntries = await getCollection('blog', ({ data }: BlogEntry) => !data.draft);
+  const notesEntries = await getCollection('notes', ({ data }: NotesEntry) => !data.draft);
+  
+  // 合并所有内容
+  const allEntries = [...blogEntries, ...notesEntries];
+  
+  // 获取所有唯一的标签
+  const allTags = allEntries.flatMap(entry => entry.data.tags || []);
+  const uniqueTags = [...new Set(allTags.map(tag => tag.toLowerCase()))];
+  
+  // 为每个标签创建路径
+  return uniqueTags.map(tag => {
+    // 过滤出带有此标签的所有内容
+    const filteredEntries = allEntries.filter(
+      entry => entry.data.tags?.some((t: string) => t.toLowerCase() === tag)
+    );
+    
+    return {
+      params: { tag },
+      props: { 
+        tag, 
+        entries: filteredEntries,
+        // 使用第一个条目中的标签名称（原始大小写）来显示
+        tagDisplay: filteredEntries[0]?.data.tags?.find((t: string) => 
+          t.toLowerCase() === tag
+        ) || tag
+      }
+    };
+  });
+}
+
+// 页面属性
+const { tag, entries, tagDisplay } = Astro.props;
+
+// 按日期排序
+const sortedEntries = entries.sort((a, b) => 
+  new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+);
+
+// 格式化日期的函数
+function formatDate(date: Date): string {
+  return new Date(date).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+---
+
+<Layout title={`#${tagDisplay} - 标签`}>
+  <div class="max-w-4xl mx-auto">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold mb-2">#{tagDisplay}</h1>
+      <p class="text-gray-600">共 {entries.length} 篇文章/笔记</p>
+    </header>
+
+    <div class="space-y-6">
+      {sortedEntries.map((entry: ContentEntry) => {
+        // 确定条目的类型和链接
+        const collectionType = 'collection' in entry ? entry.collection : 
+          (entry.id.startsWith('blog/') ? 'blog' : 'notes');
+        const entryLink = `/${collectionType}/${entry.slug}`;
+        
+        return (
+          <article class="border-b border-gray-200 pb-6">
+            <h2 class="text-xl font-semibold mb-2">
+              <a href={entryLink} class="text-blue-700 hover:underline">
+                {entry.data.title}
+              </a>
+            </h2>
+            {entry.data.description && (
+              <p class="text-gray-600 mb-3">{entry.data.description}</p>
+            )}
+            <div class="flex flex-wrap items-center text-sm text-gray-500">
+              <time datetime={entry.data.date.toISOString()}>
+                {formatDate(entry.data.date)}
+              </time>
+              <span class="mx-2">|</span>
+              <span>{collectionType === 'blog' ? '博客文章' : '学习笔记'}</span>
+              {entry.data.category && (
+                <>
+                  <span class="mx-2">|</span>
+                  <a href={`/category/${entry.data.category.toLowerCase()}`} class="text-blue-600 hover:underline">
+                    {entry.data.category}
+                  </a>
+                </>
+              )}
+            </div>
+            {entry.data.tags && entry.data.tags.length > 0 && (
+              <div class="flex flex-wrap gap-2 mt-2">
+                {entry.data.tags
+                  .filter((t: string) => t.toLowerCase() !== tag)
+                  .map((otherTag: string) => (
+                    <a 
+                      href={`/tag/${otherTag.toLowerCase()}`}
+                      class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded hover:bg-blue-200"
+                    >
+                      {otherTag}
+                    </a>
+                  ))
+                }
+              </div>
+            )}
+          </article>
+        );
+      })}
+    </div>
+  </div>
+</Layout> 

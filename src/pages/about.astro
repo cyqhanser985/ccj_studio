@@ -2,11 +2,74 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="ccj - 关于">
-  <h1 class="text-3xl font-bold mb-4">让你领略下ccj有多菜吧！</h1>
-  <nav class="mt-4">
-    <a href="/" class="text-blue-600 hover:underline mr-4">首页</a>
-    <a href="/about/" class="text-blue-600 hover:underline mr-4">关于</a>
-    <a href="/blog/" class="text-blue-600 hover:underline">博客</a>
-  </nav>
+<Layout title="关于本站">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl md:text-4xl font-bold mb-6">关于个人学习Studio</h1>
+    
+    <div class="prose prose-lg max-w-none">
+      <p class="text-xl text-gray-600 mb-8">
+        欢迎来到我的个人学习空间，这里是我记录、整理和分享学习历程的数字花园。
+      </p>
+      
+      <h2>网站初衷</h2>
+      <p>
+        创建这个网站的主要目的是建立一个个性化的知识管理系统，用于：
+      </p>
+      <ul>
+        <li>记录学习过程中的重要知识点和见解</li>
+        <li>系统化整理和分类学习内容</li>
+        <li>方便日后回顾和检索关键信息</li>
+        <li>实践前端开发技术，特别是在组织和呈现结构化内容方面</li>
+      </ul>
+      
+      <h2>内容主题</h2>
+      <p>
+        网站内容主要围绕以下学术领域：
+      </p>
+      <ul>
+        <li>数学（微积分、线性代数、概率统计等）</li>
+        <li>计算机科学基础</li>
+        <li>数据科学与机器学习</li>
+        <li>其他学习探索的记录</li>
+      </ul>
+      
+      <h2>技术实现</h2>
+      <p>
+        本站采用现代化的Web技术构建：
+      </p>
+      <ul>
+        <li><strong>Astro</strong> - 高性能静态站点生成器，专为内容型网站优化</li>
+        <li><strong>Markdown/MDX</strong> - 结构化文档格式，便于撰写和维护内容</li>
+        <li><strong>Tailwind CSS</strong> - 实用优先的CSS框架，实现响应式设计</li>
+        <li><strong>KaTeX</strong> - 用于高质量数学公式排版</li>
+      </ul>
+      
+      <h2>内容组织</h2>
+      <p>
+        内容主要分为两大类：
+      </p>
+      <ul>
+        <li><strong>博客文章</strong> - 较长形式的内容，深入探讨特定主题或概念</li>
+        <li><strong>学习笔记</strong> - 简洁的知识点记录，便于快速参考</li>
+      </ul>
+      
+      <p>
+        此外，所有内容都通过<a href="/category">分类</a>和<a href="/tag">标签</a>系统进行分类组织，便于导航和查找相关内容。
+      </p>
+      
+      <h2>持续迭代</h2>
+      <p>
+        本站将持续更新和改进：
+      </p>
+      <ul>
+        <li>定期添加新的学习内容和笔记</li>
+        <li>优化网站功能和用户体验</li>
+        <li>尝试集成新的交互式学习组件</li>
+      </ul>
+      
+      <p class="mt-8 text-gray-600">
+        感谢您访问我的学习空间。希望这里的内容能够对您有所帮助，也欢迎通过文章评论区提供反馈和建议。
+      </p>
+    </div>
+  </div>
 </Layout>

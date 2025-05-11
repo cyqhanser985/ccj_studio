@@ -2,23 +2,22 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 
-// 定义博客条目的类型
-type BlogEntry = CollectionEntry<'blog'>;
-type BlogData = BlogEntry['data'];
+// 定义笔记条目的类型
+type NotesEntry = CollectionEntry<'notes'>;
 
-// 获取文章集合并排除草稿
+// 获取笔记集合并排除草稿
 export async function getStaticPaths() {
-  const blogEntries = await getCollection('blog', ({ data }: BlogEntry) => {
+  const notesEntries = await getCollection('notes', ({ data }: NotesEntry) => {
     return import.meta.env.PROD ? !data.draft : true;
   });
   
-  return blogEntries.map((entry: BlogEntry) => ({
+  return notesEntries.map((entry: NotesEntry) => ({
     params: { slug: entry.slug },
     props: { entry },
   }));
 }
 
-const { entry } = Astro.props as { entry: BlogEntry };
+const { entry } = Astro.props as { entry: NotesEntry };
 const { Content } = await entry.render();
 
 // 格式化日期
@@ -31,10 +30,10 @@ const formattedDate = new Date(entry.data.date).toLocaleDateString('zh-CN', {
 
 <Layout title={entry.data.title}>
   <article class="max-w-3xl mx-auto">
-    <div class="mb-8">
-      <h1 class="text-3xl md:text-4xl font-bold mb-2">{entry.data.title}</h1>
+    <div class="mb-6 pb-4 border-b border-gray-200">
+      <h1 class="text-3xl font-bold mb-2">{entry.data.title}</h1>
       {entry.data.description && (
-        <p class="text-gray-600 mb-4">{entry.data.description}</p>
+        <p class="text-gray-600 mb-3">{entry.data.description}</p>
       )}
       <div class="flex flex-wrap items-center text-sm text-gray-500">
         <time datetime={entry.data.date.toISOString()}>{formattedDate}</time>
@@ -46,7 +45,7 @@ const formattedDate = new Date(entry.data.date).toLocaleDateString('zh-CN', {
         )}
       </div>
       {entry.data.tags && entry.data.tags.length > 0 && (
-        <div class="flex flex-wrap gap-2 mt-3">
+        <div class="flex flex-wrap gap-2 mt-2">
           {entry.data.tags.map((tag: string) => (
             <a 
               href={`/tag/${tag.toLowerCase()}`}
@@ -66,26 +65,24 @@ const formattedDate = new Date(entry.data.date).toLocaleDateString('zh-CN', {
 </Layout>
 
 <style is:global>
-  /* KaTeX 样式已通过 global.css 引入 */
-  
-  /* 文章内容样式 */
+  /* 笔记内容样式与博客略有不同 */
   .prose h1 {
-    @apply text-3xl font-bold mb-4 mt-8;
+    @apply text-2xl font-bold mb-3 mt-6;
   }
   .prose h2 {
-    @apply text-2xl font-bold mb-4 mt-6;
+    @apply text-xl font-bold mb-3 mt-5;
   }
   .prose h3 {
-    @apply text-xl font-semibold mb-3 mt-5;
+    @apply text-lg font-semibold mb-2 mt-4;
   }
   .prose p {
-    @apply mb-4;
+    @apply mb-3;
   }
   .prose ul {
-    @apply list-disc pl-5 mb-4;
+    @apply list-disc pl-5 mb-3;
   }
   .prose ol {
-    @apply list-decimal pl-5 mb-4;
+    @apply list-decimal pl-5 mb-3;
   }
   .prose li {
     @apply mb-1;
@@ -102,4 +99,4 @@ const formattedDate = new Date(entry.data.date).toLocaleDateString('zh-CN', {
   .prose pre {
     @apply bg-gray-800 text-white p-4 rounded-md overflow-x-auto;
   }
-</style>
+</style> 
