@@ -1,10 +1,21 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+const blogEntries = await getCollection('blog');
 ---
-
 <Layout title="ccj - 博客">
   <h1 class="text-3xl font-bold mb-4">ccj 的高数学习博客</h1>
   <p class="mb-2">在这里，我将分享我的高数学习之旅。</p>
+  <div class="mt-6 space-y-4">
+    {blogEntries.map((post: any) => (
+      <article class="border-b pb-4">
+        <a href={`/blog/${post.slug}/`} class="text-xl font-semibold text-blue-600 hover:underline">
+          {post.data.title}
+        </a>
+        <p class="text-gray-500 text-sm mt-1">{post.data.date}</p>
+      </article>
+    ))}
+  </div>
   <nav class="mt-4">
     <a href="/" class="text-blue-600 hover:underline mr-4">首页</a>
     <a href="/about/" class="text-blue-600 hover:underline mr-4">关于</a>
