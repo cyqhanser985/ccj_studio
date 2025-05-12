@@ -69,6 +69,10 @@ export default defineConfig({
     tailwind(),
     searchIndexIntegration()
   ],
+  // 确保内容集合功能正确启用
+  experimental: {
+    contentCollections: true
+  },
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [
