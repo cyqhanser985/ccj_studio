@@ -1,0 +1,140 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+
+// 定义条目类型
+type BlogEntry = CollectionEntry<'blog'>;
+type NotesEntry = CollectionEntry<'notes'>;
+type ContentEntry = BlogEntry | NotesEntry;
+
+// 获取所有文章和笔记
+const blogEntries = await getCollection('blog', ({ data }) => !data.draft);
+const notesEntries = await getCollection('notes', ({ data }) => !data.draft);
+
+// 合并所有内容
+const allEntries = [...blogEntries, ...notesEntries];
+
+// 获取所有标签及其数量
+const tagMap = new Map<string, number>();
+const tagEntryMap = new Map<string, ContentEntry[]>();
+
+allEntries.forEach(entry => {
+  entry.data.tags?.forEach(tag => {
+    // 标准化标签（小写）
+    const normalizedTag = tag.toLowerCase();
+    
+    // 更新计数
+    tagMap.set(normalizedTag, (tagMap.get(normalizedTag) || 0) + 1);
+    
+    // 更新标签对应的条目
+    if (!tagEntryMap.has(normalizedTag)) {
+      tagEntryMap.set(normalizedTag, []);
+    }
+    tagEntryMap.get(normalizedTag)?.push(entry);
+  });
+});
+
+// 转换为排序后的数组
+const tagStats = Array.from(tagMap.entries())
+  .map(([tag, count]) => {
+    // 找到原始标签的大小写形式
+    const originalCaseTag = allEntries.find(entry => 
+      entry.data.tags?.some(t => t.toLowerCase() === tag)
+    )?.data.tags?.find(t => t.toLowerCase() === tag) || tag;
+    
+    return {
+      tag,
+      displayName: originalCaseTag,
+      count,
+      // 计算标签的"大小"，用于展示
+      // 将标签数量映射到1-5的范围
+      size: Math.max(1, Math.min(5, Math.ceil(count / 3)))
+    };
+  })
+  .sort((a, b) => b.count - a.count); // 按数量降序排序
+---
+
+<Layout title="所有标签">
+  <div class="max-w-4xl mx-auto py-8 px-4">
+    <h1 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white">标签云</h1>
+    
+    <div class="mb-10 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+      <div class="flex flex-wrap gap-4">
+        {tagStats.map(({ tag, displayName, count, size }) => (
+          <a 
+            href={`/tag/${tag}`}
+            class={`tag-size-${size} bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors`}
+          >
+            {displayName} <span class="text-blue-500 dark:text-blue-400 ml-1 text-opacity-80">({count})</span>
+          </a>
+        ))}
+      </div>
+    </div>
+    
+    <section class="space-y-8">
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white">按标签浏览</h2>
+      
+      {tagStats.map(({ tag, displayName, count }) => {
+        const entries = tagEntryMap.get(tag) || [];
+        const sortedEntries = entries.sort((a, b) => 
+          new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+        ).slice(0, 5); // 只显示每个标签的前5篇文章
+        
+        return (
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold">
+                  <a href={`/tag/${tag}`} class="text-blue-600 dark:text-blue-400 hover:underline">
+                    #{displayName}
+                  </a>
+                </h3>
+                <span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm px-3 py-1 rounded-full">
+                  {count} 篇文章
+                </span>
+              </div>
+            </div>
+            
+            <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+              {sortedEntries.map(entry => {
+                const collectionType = entry.collection;
+                return (
+                  <li class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <a href={`/${collectionType}/${entry.slug}`} class="block">
+                      <h4 class="font-medium text-gray-900 dark:text-white">{entry.data.title}</h4>
+                      <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {new Date(entry.data.date).toLocaleDateString('zh-CN', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                        <span class="mx-1">•</span>
+                        {collectionType === 'blog' ? '博客文章' : '学习笔记'}
+                      </div>
+                    </a>
+                  </li>
+                );
+              })}
+              
+              {entries.length > 5 && (
+                <li class="p-4 text-center">
+                  <a href={`/tag/${tag}`} class="text-blue-600 dark:text-blue-400 hover:underline">
+                    查看全部 {count} 篇文章 →
+                  </a>
+                </li>
+              )}
+            </ul>
+          </div>
+        );
+      })}
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .tag-size-1 { @apply text-sm; }
+  .tag-size-2 { @apply text-base; }
+  .tag-size-3 { @apply text-lg; }
+  .tag-size-4 { @apply text-xl; }
+  .tag-size-5 { @apply text-2xl; }
+</style> 

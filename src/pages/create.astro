@@ -1,0 +1,269 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+// 获取所有分类和标签用于下拉菜单
+const blogEntries = await getCollection('blog');
+const notesEntries = await getCollection('notes');
+const allEntries = [...blogEntries, ...notesEntries];
+
+// 提取所有唯一分类
+const categories = [...new Set(allEntries
+  .map(entry => entry.data.category)
+  .filter(Boolean))];
+
+// 提取所有唯一标签
+const tags = [...new Set(allEntries
+  .flatMap(entry => entry.data.tags || []))];
+---
+
+<Layout title="创建新内容">
+  <div class="max-w-4xl mx-auto py-8 px-4">
+    <h1 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white">创建新内容</h1>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+      <form id="create-form" class="space-y-6">
+        <div>
+          <label for="content-type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">内容类型</label>
+          <select id="content-type" name="content-type" required class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            <option value="blog">博客文章</option>
+            <option value="notes">学习笔记</option>
+          </select>
+        </div>
+        
+        <div>
+          <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">标题</label>
+          <input type="text" id="title" name="title" required placeholder="输入标题" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+        </div>
+        
+        <div>
+          <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">描述</label>
+          <textarea id="description" name="description" rows="2" placeholder="输入简短描述（可选）" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+        </div>
+        
+        <div>
+          <label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">分类</label>
+          <div class="flex space-x-2">
+            <input list="category-list" id="category" name="category" placeholder="选择或输入新分类" class="flex-1 rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            <datalist id="category-list">
+              {categories.map(category => (
+                <option value={category} />
+              ))}
+            </datalist>
+          </div>
+        </div>
+        
+        <div>
+          <label for="tags" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">标签</label>
+          <div class="flex space-x-2">
+            <input id="tag-input" type="text" placeholder="输入标签后按回车" list="tag-list" class="flex-1 rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            <datalist id="tag-list">
+              {tags.map(tag => (
+                <option value={tag} />
+              ))}
+            </datalist>
+            <button type="button" id="add-tag" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              添加
+            </button>
+          </div>
+          <div id="tags-container" class="flex flex-wrap gap-2 mt-2"></div>
+          <input type="hidden" id="tags" name="tags" value="">
+        </div>
+        
+        <div>
+          <label for="content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">内容 (Markdown)</label>
+          <textarea id="content" name="content" rows="15" placeholder="在此输入 Markdown 格式的内容..." class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 font-mono"></textarea>
+        </div>
+        
+        <div class="flex justify-end space-x-3">
+          <button type="button" id="preview-btn" class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            预览
+          </button>
+          <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            保存
+          </button>
+        </div>
+      </form>
+    </div>
+    
+    <!-- 预览模态框 -->
+    <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-gray-900 dark:text-white">预览</h2>
+          <button id="close-preview" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div id="preview-content" class="prose dark:prose-invert max-w-none">
+          <!-- 预览内容将在这里动态显示 -->
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // 标签管理
+  const tagInput = document.getElementById('tag-input') as HTMLInputElement;
+  const addTagButton = document.getElementById('add-tag') as HTMLButtonElement;
+  const tagsContainer = document.getElementById('tags-container') as HTMLDivElement;
+  const tagsInput = document.getElementById('tags') as HTMLInputElement;
+  
+  // 存储当前标签
+  let currentTags: string[] = [];
+  
+  // 添加标签函数
+  function addTag(tag: string) {
+    if (!tag || currentTags.includes(tag)) return;
+    
+    currentTags.push(tag);
+    updateTagsUI();
+  }
+  
+  // 更新标签UI
+  function updateTagsUI() {
+    // 清空容器
+    tagsContainer.innerHTML = '';
+    
+    // 为每个标签创建UI元素
+    currentTags.forEach((tag, index) => {
+      const tagEl = document.createElement('div');
+      tagEl.className = 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded px-2 py-1 flex items-center text-sm';
+      tagEl.innerHTML = `
+        <span>${tag}</span>
+        <button type="button" data-index="${index}" class="ml-1 text-blue-500 hover:text-blue-700">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      `;
+      tagsContainer.appendChild(tagEl);
+      
+      // 添加删除监听器
+      const deleteBtn = tagEl.querySelector('button');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => {
+          currentTags.splice(index, 1);
+          updateTagsUI();
+        });
+      }
+    });
+    
+    // 更新隐藏输入
+    tagsInput.value = JSON.stringify(currentTags);
+  }
+  
+  // 添加标签事件
+  addTagButton.addEventListener('click', () => {
+    const tag = tagInput.value.trim();
+    if (tag) {
+      addTag(tag);
+      tagInput.value = '';
+      tagInput.focus();
+    }
+  });
+  
+  // 回车键添加标签
+  tagInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const tag = tagInput.value.trim();
+      if (tag) {
+        addTag(tag);
+        tagInput.value = '';
+      }
+    }
+  });
+  
+  // 表单提交
+  const form = document.getElementById('create-form') as HTMLFormElement;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // 获取表单数据
+    const formData = new FormData(form);
+    const contentType = formData.get('content-type') as string;
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string || '';
+    const category = formData.get('category') as string || '';
+    const content = formData.get('content') as string;
+    const date = new Date().toISOString();
+    
+    // 创建文件名（使用标题的 slug 版本）
+    const slug = title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '') // 移除特殊字符
+      .replace(/\s+/g, '-') // 空格替换为连字符
+      .replace(/--+/g, '-'); // 移除连续连字符
+    
+    // 构建 frontmatter
+    const frontmatter = `---
+title: "${title}"
+date: ${date}
+description: "${description}"
+tags: ${JSON.stringify(currentTags)}
+category: "${category}"
+draft: false
+---
+
+${content}`;
+
+    try {
+      // 发送到服务器创建文件的请求
+      const response = await fetch('/api/create-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contentType,
+          slug,
+          frontmatter
+        }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // 显示成功消息并重定向
+        alert('内容创建成功！');
+        window.location.href = data.url;
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || '创建内容失败');
+      }
+    } catch (error) {
+      alert(`错误: ${error instanceof Error ? error.message : '未知错误'}`);
+      console.error('创建内容错误:', error);
+    }
+  });
+  
+  // 预览功能
+  const previewBtn = document.getElementById('preview-btn') as HTMLButtonElement;
+  const previewModal = document.getElementById('preview-modal') as HTMLDivElement;
+  const closePreview = document.getElementById('close-preview') as HTMLButtonElement;
+  const previewContent = document.getElementById('preview-content') as HTMLDivElement;
+  
+  previewBtn.addEventListener('click', async () => {
+    const content = (document.getElementById('content') as HTMLTextAreaElement).value;
+    const title = (document.getElementById('title') as HTMLInputElement).value;
+    
+    // 简单的预览，在实际应用中可以使用更复杂的Markdown解析
+    previewContent.innerHTML = `<h1>${title}</h1>\n${content}`;
+    previewModal.classList.remove('hidden');
+  });
+  
+  closePreview.addEventListener('click', () => {
+    previewModal.classList.add('hidden');
+  });
+  
+  // 点击模态框外部关闭
+  previewModal.addEventListener('click', (e) => {
+    if (e.target === previewModal) {
+      previewModal.classList.add('hidden');
+    }
+  });
+</script> 

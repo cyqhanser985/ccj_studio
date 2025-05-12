@@ -44,23 +44,23 @@ function formatDate(date: Date): string {
       <div class="lg:col-span-3">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           {sortedEntries.map((note: NotesEntry) => (
-            <article class="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <article class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
               <h2 class="text-xl font-bold mb-3">
-                <a href={`/notes/${note.slug}`} class="text-blue-700 hover:underline">
+                <a href={`/notes/${note.slug}`} class="text-blue-700 dark:text-blue-400 hover:underline">
                   {note.data.title}
                 </a>
               </h2>
               {note.data.description && (
-                <p class="text-gray-600 mb-3 line-clamp-2">{note.data.description}</p>
+                <p class="text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">{note.data.description}</p>
               )}
-              <div class="flex items-center text-sm text-gray-500 mb-3">
+              <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-3">
                 <time datetime={note.data.date.toISOString()}>
                   {formatDate(note.data.date)}
                 </time>
                 {note.data.category && (
                   <>
                     <span class="mx-2">|</span>
-                    <a href={`/category/${note.data.category.toLowerCase()}`} class="text-blue-600 hover:underline">
+                    <a href={`/category/${note.data.category.toLowerCase()}`} class="text-blue-600 dark:text-blue-400 hover:underline">
                       {note.data.category}
                     </a>
                   </>
@@ -71,7 +71,7 @@ function formatDate(date: Date): string {
                   {note.data.tags.map((tag: string) => (
                     <a 
                       href={`/tag/${tag.toLowerCase()}`}
-                      class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded hover:bg-blue-200"
+                      class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-800"
                     >
                       {tag}
                     </a>
@@ -86,8 +86,8 @@ function formatDate(date: Date): string {
       <!-- 侧边栏 -->
       <div class="lg:col-span-1">
         <!-- 分类列表 -->
-        <section class="bg-white p-6 rounded-lg shadow-sm mb-8">
-          <h2 class="text-xl font-bold mb-4 pb-2 border-b">分类</h2>
+        <section class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-8">
+          <h2 class="text-xl font-bold mb-4 pb-2 border-b dark:border-gray-700">分类</h2>
           <ul class="space-y-2">
             {categories.map((category) => {
               if (category) {
@@ -95,10 +95,10 @@ function formatDate(date: Date): string {
                   <li>
                     <a 
                       href={`/category/${category.toLowerCase()}`} 
-                      class="flex justify-between items-center text-blue-600 hover:underline"
+                      class="flex justify-between items-center text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       <span>{category}</span>
-                      <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                      <span class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded">
                         {notesEntries.filter((entry: NotesEntry) => entry.data.category === category).length}
                       </span>
                     </a>
@@ -111,13 +111,13 @@ function formatDate(date: Date): string {
         </section>
         
         <!-- 标签云 -->
-        <section class="bg-white p-6 rounded-lg shadow-sm">
-          <h2 class="text-xl font-bold mb-4 pb-2 border-b">标签云</h2>
+        <section class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
+          <h2 class="text-xl font-bold mb-4 pb-2 border-b dark:border-gray-700">标签云</h2>
           <div class="flex flex-wrap gap-2">
             {uniqueTags.map((tag) => (
               <a 
                 href={`/tag/${String(tag).toLowerCase()}`}
-                class="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded hover:bg-blue-200"
+                class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm px-3 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-800"
               >
                 {tag}
               </a>

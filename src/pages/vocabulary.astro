@@ -1,0 +1,725 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+// 可以考虑创建单词集合，但这里我们将直接从文件中读取
+---
+
+<Layout title="英语单词学习">
+  <div class="max-w-6xl mx-auto py-8 px-4">
+    <h1 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white">英语单词学习</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- 左侧面板：功能区 -->
+      <div class="md:col-span-1">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
+          <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">单词添加</h2>
+          <form id="add-word-form" class="space-y-4">
+            <div>
+              <label for="word" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">英文单词</label>
+              <input type="text" id="word" name="word" required placeholder="输入英文单词" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+            
+            <div>
+              <label for="pronunciation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">音标 (可选)</label>
+              <input type="text" id="pronunciation" name="pronunciation" placeholder="例如: /wɜːrd/" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+            
+            <div>
+              <label for="meaning" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">中文释义</label>
+              <textarea id="meaning" name="meaning" rows="2" required placeholder="输入中文释义" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+            </div>
+            
+            <div>
+              <label for="example" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">例句 (可选)</label>
+              <textarea id="example" name="example" rows="2" placeholder="输入英文例句" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+            </div>
+            
+            <div>
+              <label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">分类 (可选)</label>
+              <input type="text" id="category" name="category" placeholder="例如: 学术, 日常, 考试" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+            
+            <div>
+              <label for="difficulty" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">难度</label>
+              <select id="difficulty" name="difficulty" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <option value="easy">简单</option>
+                <option value="medium" selected>中等</option>
+                <option value="hard">困难</option>
+              </select>
+            </div>
+            
+            <div class="flex justify-end">
+              <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                添加单词
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+          <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">学习设置</h2>
+          <div class="space-y-4">
+            <div>
+              <label for="study-mode" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">学习模式</label>
+              <select id="study-mode" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <option value="all">所有单词</option>
+                <option value="new">新单词优先</option>
+                <option value="difficult">困难单词优先</option>
+                <option value="review">复习模式</option>
+              </select>
+            </div>
+            
+            <div>
+              <label for="category-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">分类筛选</label>
+              <select id="category-filter" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <option value="all">所有分类</option>
+                <!-- 动态填充分类选项 -->
+              </select>
+            </div>
+            
+            <div class="flex items-center">
+              <input type="checkbox" id="auto-play" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+              <label for="auto-play" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">自动发音</label>
+            </div>
+            
+            <div class="pt-4">
+              <button id="start-learning" class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                开始学习
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 右侧面板：单词展示/学习区 -->
+      <div class="md:col-span-2">
+        <!-- 学习模式 -->
+        <div id="learning-mode" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6 hidden">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">学习模式</h2>
+            <div class="flex items-center space-x-4">
+              <span id="progress-text" class="text-sm text-gray-600 dark:text-gray-400">1/20</span>
+              <button id="close-learning" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          <div class="text-center mb-8">
+            <h3 id="current-word" class="text-3xl font-bold mb-2 text-gray-900 dark:text-white">Example</h3>
+            <p id="current-pronunciation" class="text-lg text-gray-600 dark:text-gray-400 mb-4">/ɪɡˈzæm.pəl/</p>
+            <button id="play-audio" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              </svg>
+            </button>
+          </div>
+          
+          <div id="meaning-container" class="mb-6 opacity-0 transition-opacity duration-300">
+            <div class="border-t border-b border-gray-200 dark:border-gray-700 py-4">
+              <h4 class="font-semibold mb-2 text-gray-800 dark:text-gray-200">释义:</h4>
+              <p id="current-meaning" class="text-gray-700 dark:text-gray-300">例子，实例，样本</p>
+            </div>
+            
+            <div id="example-section" class="py-4">
+              <h4 class="font-semibold mb-2 text-gray-800 dark:text-gray-200">例句:</h4>
+              <p id="current-example" class="text-gray-700 dark:text-gray-300 italic">This is an example of how to use the word in a sentence.</p>
+            </div>
+          </div>
+          
+          <div class="flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0 sm:space-x-3">
+            <button id="show-meaning" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              显示释义
+            </button>
+            <button id="next-word" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+              下一个
+            </button>
+          </div>
+        </div>
+        
+        <!-- 单词列表 -->
+        <div id="vocabulary-list" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+          <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+              <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-0">我的单词库</h2>
+              <div class="flex items-center">
+                <input 
+                  type="text" 
+                  id="search-vocabulary" 
+                  placeholder="搜索单词..." 
+                  class="rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                />
+              </div>
+            </div>
+            
+            <div class="flex flex-wrap gap-2 mb-4">
+              <button class="category-filter active bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm hover:bg-blue-200 dark:hover:bg-blue-800" data-category="all">
+                全部
+              </button>
+              <!-- 动态生成分类按钮 -->
+            </div>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">单词</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">释义</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">分类</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">难度</th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">操作</th>
+                </tr>
+              </thead>
+              <tbody id="vocabulary-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <!-- 单词会动态加载到这里 -->
+                <tr>
+                  <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                    加载中...或者还没有单词，请添加一些单词开始学习。
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div id="pagination" class="px-6 py-4 flex justify-between items-center border-t border-gray-200 dark:border-gray-700">
+            <div>
+              <span id="total-count" class="text-sm text-gray-700 dark:text-gray-300">共 0 个单词</span>
+            </div>
+            <div class="flex space-x-2">
+              <button id="prev-page" class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 disabled:opacity-50">上一页</button>
+              <button id="next-page" class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 disabled:opacity-50">下一页</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // 定义单词类型
+  interface Word {
+    id: string;
+    word: string;
+    pronunciation?: string;
+    meaning: string;
+    example?: string;
+    category?: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    lastReviewed?: string;
+    reviewCount?: number;
+  }
+  
+  // 本地存储键
+  const STORAGE_KEY = 'vocabulary_words';
+  
+  // 当前状态
+  let words: Word[] = [];
+  let currentPage = 1;
+  let pageSize = 10;
+  let filteredWords: Word[] = [];
+  let currentFilter = 'all';
+  let searchTerm = '';
+  
+  // 学习模式变量
+  let currentWordIndex = 0;
+  let learningWords: Word[] = [];
+  let meaningVisible = false;
+  
+  // DOM 元素引用
+  const addWordForm = document.getElementById('add-word-form') as HTMLFormElement;
+  const vocabularyTableBody = document.getElementById('vocabulary-table-body') as HTMLTableSectionElement;
+  const totalCountEl = document.getElementById('total-count') as HTMLSpanElement;
+  const searchInput = document.getElementById('search-vocabulary') as HTMLInputElement;
+  const prevPageBtn = document.getElementById('prev-page') as HTMLButtonElement;
+  const nextPageBtn = document.getElementById('next-page') as HTMLButtonElement;
+  
+  // 学习模式元素
+  const learningModeEl = document.getElementById('learning-mode') as HTMLDivElement;
+  const vocabularyListEl = document.getElementById('vocabulary-list') as HTMLDivElement;
+  const startLearningBtn = document.getElementById('start-learning') as HTMLButtonElement;
+  const closeLearningBtn = document.getElementById('close-learning') as HTMLButtonElement;
+  const currentWordEl = document.getElementById('current-word') as HTMLHeadingElement;
+  const currentPronunciationEl = document.getElementById('current-pronunciation') as HTMLParagraphElement;
+  const currentMeaningEl = document.getElementById('current-meaning') as HTMLParagraphElement;
+  const currentExampleEl = document.getElementById('current-example') as HTMLParagraphElement;
+  const meaningContainerEl = document.getElementById('meaning-container') as HTMLDivElement;
+  const exampleSectionEl = document.getElementById('example-section') as HTMLDivElement;
+  const showMeaningBtn = document.getElementById('show-meaning') as HTMLButtonElement;
+  const nextWordBtn = document.getElementById('next-word') as HTMLButtonElement;
+  const progressTextEl = document.getElementById('progress-text') as HTMLSpanElement;
+  
+  // 初始化
+  function init() {
+    loadWords();
+    renderCategoryFilters();
+    setupEventListeners();
+  }
+  
+  // 从本地存储加载单词
+  function loadWords() {
+    try {
+      const storedWords = localStorage.getItem(STORAGE_KEY);
+      words = storedWords ? JSON.parse(storedWords) : [];
+      filteredWords = [...words];
+      updateWordsDisplay();
+    } catch (error) {
+      console.error('加载单词失败:', error);
+      words = [];
+    }
+  }
+  
+  // 保存单词到本地存储
+  function saveWords() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
+    } catch (error) {
+      console.error('保存单词失败:', error);
+      alert('保存单词失败，请检查浏览器存储空间');
+    }
+  }
+  
+  // 添加新单词
+  function addWord(newWord: Omit<Word, 'id'>) {
+    // 创建带有ID的完整单词对象
+    const word: Word = {
+      ...newWord,
+      id: Date.now().toString(),
+      reviewCount: 0,
+    };
+    
+    words.unshift(word); // 添加到开头
+    saveWords();
+    
+    // 如果当前没有筛选，则更新显示
+    if (currentFilter === 'all' && searchTerm === '') {
+      filteredWords = [...words];
+    } else {
+      applyFilters();
+    }
+    
+    updateWordsDisplay();
+    renderCategoryFilters();
+  }
+  
+  // 删除单词
+  function deleteWord(id: string) {
+    if (confirm('确定要删除这个单词吗？')) {
+      words = words.filter(word => word.id !== id);
+      saveWords();
+      applyFilters();
+      updateWordsDisplay();
+      renderCategoryFilters();
+    }
+  }
+  
+  // 获取所有唯一分类
+  function getUniqueCategories(): string[] {
+    const categories = words
+      .map(word => word.category)
+      .filter((category): category is string => 
+        category !== undefined && category.trim() !== ''
+      );
+    
+    return [...new Set(categories)];
+  }
+  
+  // 渲染分类筛选按钮
+  function renderCategoryFilters() {
+    const categories = getUniqueCategories();
+    const categorySelect = document.getElementById('category-filter') as HTMLSelectElement;
+    
+    // 清空并添加"全部"选项
+    categorySelect.innerHTML = '<option value="all">所有分类</option>';
+    
+    // 添加分类选项
+    categories.forEach(category => {
+      const option = document.createElement('option');
+      option.value = category;
+      option.textContent = category;
+      categorySelect.appendChild(option);
+    });
+    
+    // 生成过滤按钮
+    const filterContainer = document.querySelector('.flex.flex-wrap.gap-2') as HTMLDivElement;
+    if (filterContainer) {
+      // 保留"全部"按钮
+      filterContainer.innerHTML = `
+        <button class="category-filter ${currentFilter === 'all' ? 'active' : ''} bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm hover:bg-blue-200 dark:hover:bg-blue-800" data-category="all">
+          全部
+        </button>
+      `;
+      
+      // 添加分类按钮
+      categories.forEach(category => {
+        const button = document.createElement('button');
+        button.className = `category-filter ${currentFilter === category ? 'active' : ''} bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600`;
+        button.setAttribute('data-category', category);
+        button.textContent = category;
+        filterContainer.appendChild(button);
+        
+        // 添加点击事件
+        button.addEventListener('click', () => {
+          currentFilter = category;
+          applyFilters();
+          updateCategoryFilterUI();
+        });
+      });
+      
+      // 为"全部"按钮添加事件
+      const allButton = filterContainer.querySelector('[data-category="all"]') as HTMLButtonElement;
+      if (allButton) {
+        allButton.addEventListener('click', () => {
+          currentFilter = 'all';
+          applyFilters();
+          updateCategoryFilterUI();
+        });
+      }
+    }
+  }
+  
+  // 更新分类筛选UI
+  function updateCategoryFilterUI() {
+    const buttons = document.querySelectorAll('.category-filter');
+    buttons.forEach(button => {
+      const category = button.getAttribute('data-category');
+      if (category === currentFilter) {
+        button.classList.add('active', 'bg-blue-100', 'dark:bg-blue-900', 'text-blue-800', 'dark:text-blue-200');
+        button.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
+      } else {
+        button.classList.remove('active', 'bg-blue-100', 'dark:bg-blue-900', 'text-blue-800', 'dark:text-blue-200');
+        button.classList.add('bg-gray-100', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
+      }
+    });
+  }
+  
+  // 应用过滤器
+  function applyFilters() {
+    // 首先根据搜索词过滤
+    let result = words.filter(word => 
+      word.word.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      word.meaning.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    // 然后根据分类过滤
+    if (currentFilter !== 'all') {
+      result = result.filter(word => word.category === currentFilter);
+    }
+    
+    filteredWords = result;
+    currentPage = 1; // 重置分页
+    updateWordsDisplay();
+  }
+  
+  // 更新单词显示
+  function updateWordsDisplay() {
+    // 计算分页
+    const totalPages = Math.ceil(filteredWords.length / pageSize);
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const currentPageWords = filteredWords.slice(startIndex, endIndex);
+    
+    // 更新表格内容
+    if (vocabularyTableBody) {
+      if (currentPageWords.length === 0) {
+        vocabularyTableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+              ${searchTerm || currentFilter !== 'all' ? '没有找到匹配的单词' : '还没有单词，请添加一些单词开始学习'}
+            </td>
+          </tr>
+        `;
+      } else {
+        vocabularyTableBody.innerHTML = currentPageWords.map(word => `
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="font-medium text-gray-900 dark:text-white">${word.word}</div>
+              ${word.pronunciation ? `<div class="text-sm text-gray-500 dark:text-gray-400">${word.pronunciation}</div>` : ''}
+            </td>
+            <td class="px-6 py-4">
+              <div class="text-sm text-gray-900 dark:text-white">${word.meaning}</div>
+              ${word.example ? `<div class="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">${word.example}</div>` : ''}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                ${word.category || '未分类'}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                word.difficulty === 'easy' 
+                  ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' 
+                  : word.difficulty === 'medium'
+                    ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                    : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+              }">
+                ${
+                  word.difficulty === 'easy' ? '简单' :
+                  word.difficulty === 'medium' ? '中等' : '困难'
+                }
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <button 
+                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 mr-3" 
+                data-id="${word.id}" 
+                data-action="delete"
+              >
+                删除
+              </button>
+            </td>
+          </tr>
+        `).join('');
+        
+        // 添加删除事件监听器
+        document.querySelectorAll('[data-action="delete"]').forEach(button => {
+          button.addEventListener('click', (e) => {
+            const id = (e.currentTarget as HTMLButtonElement).getAttribute('data-id');
+            if (id) deleteWord(id);
+          });
+        });
+      }
+    }
+    
+    // 更新总数
+    if (totalCountEl) {
+      totalCountEl.textContent = `共 ${filteredWords.length} 个单词`;
+    }
+    
+    // 更新分页按钮状态
+    if (prevPageBtn && nextPageBtn) {
+      prevPageBtn.disabled = currentPage <= 1;
+      nextPageBtn.disabled = currentPage >= totalPages;
+    }
+  }
+  
+  // 开始学习模式
+  function startLearningMode() {
+    const studyMode = (document.getElementById('study-mode') as HTMLSelectElement).value;
+    const categoryFilter = (document.getElementById('category-filter') as HTMLSelectElement).value;
+    
+    // 根据模式选择单词
+    if (categoryFilter !== 'all') {
+      learningWords = words.filter(word => word.category === categoryFilter);
+    } else {
+      learningWords = [...words];
+    }
+    
+    // 根据学习模式排序
+    switch (studyMode) {
+      case 'new':
+        // 新单词优先（按添加时间倒序）
+        learningWords.sort((a, b) => (parseInt(b.id) - parseInt(a.id)));
+        break;
+      case 'difficult':
+        // 困难单词优先
+        learningWords.sort((a, b) => {
+          if (b.difficulty === 'hard' && a.difficulty !== 'hard') return 1;
+          if (a.difficulty === 'hard' && b.difficulty !== 'hard') return -1;
+          if (b.difficulty === 'medium' && a.difficulty === 'easy') return 1;
+          if (a.difficulty === 'medium' && b.difficulty === 'easy') return -1;
+          return 0;
+        });
+        break;
+      case 'review':
+        // 复习模式，按最后复习时间正序，越久没复习越靠前
+        learningWords.sort((a, b) => {
+          const lastA = a.lastReviewed ? new Date(a.lastReviewed).getTime() : 0;
+          const lastB = b.lastReviewed ? new Date(b.lastReviewed).getTime() : 0;
+          return lastA - lastB;
+        });
+        break;
+      default:
+        // 随机打乱
+        learningWords = learningWords.sort(() => Math.random() - 0.5);
+    }
+    
+    // 如果没有单词，提示并返回
+    if (learningWords.length === 0) {
+      alert('没有可学习的单词，请先添加一些单词');
+      return;
+    }
+    
+    // 初始化学习状态
+    currentWordIndex = 0;
+    meaningVisible = false;
+    
+    // 显示学习模式
+    vocabularyListEl.classList.add('hidden');
+    learningModeEl.classList.remove('hidden');
+    
+    // 加载第一个单词
+    loadCurrentWord();
+  }
+  
+  // 加载当前单词到学习界面
+  function loadCurrentWord() {
+    const word = learningWords[currentWordIndex];
+    
+    if (!word) {
+      alert('学习完成！');
+      closeLearningMode();
+      return;
+    }
+    
+    // 更新进度文本
+    progressTextEl.textContent = `${currentWordIndex + 1}/${learningWords.length}`;
+    
+    // 更新单词显示
+    currentWordEl.textContent = word.word;
+    currentPronunciationEl.textContent = word.pronunciation || '';
+    currentMeaningEl.textContent = word.meaning;
+    
+    // 处理例句
+    if (word.example && word.example.trim()) {
+      currentExampleEl.textContent = word.example;
+      exampleSectionEl.classList.remove('hidden');
+    } else {
+      exampleSectionEl.classList.add('hidden');
+    }
+    
+    // 重置释义可见性
+    meaningVisible = false;
+    meaningContainerEl.classList.add('opacity-0');
+    showMeaningBtn.textContent = '显示释义';
+    
+    // 更新复习信息
+    word.lastReviewed = new Date().toISOString();
+    word.reviewCount = (word.reviewCount || 0) + 1;
+    saveWords();
+    
+    // 自动发音
+    if ((document.getElementById('auto-play') as HTMLInputElement).checked) {
+      playWordAudio(word.word);
+    }
+  }
+  
+  // 关闭学习模式
+  function closeLearningMode() {
+    learningModeEl.classList.add('hidden');
+    vocabularyListEl.classList.remove('hidden');
+  }
+  
+  // 显示或隐藏单词释义
+  function toggleMeaning() {
+    meaningVisible = !meaningVisible;
+    
+    if (meaningVisible) {
+      meaningContainerEl.classList.remove('opacity-0');
+      showMeaningBtn.textContent = '隐藏释义';
+    } else {
+      meaningContainerEl.classList.add('opacity-0');
+      showMeaningBtn.textContent = '显示释义';
+    }
+  }
+  
+  // 下一个单词
+  function nextWord() {
+    currentWordIndex++;
+    
+    if (currentWordIndex >= learningWords.length) {
+      alert('恭喜，你已经学习完所有单词！');
+      closeLearningMode();
+      return;
+    }
+    
+    loadCurrentWord();
+  }
+  
+  // 使用Web Speech API播放单词发音
+  function playWordAudio(word: string) {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.lang = 'en-US';
+      speechSynthesis.speak(utterance);
+    }
+  }
+  
+  // 设置事件监听器
+  function setupEventListeners() {
+    // 添加单词表单提交
+    if (addWordForm) {
+      addWordForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(addWordForm);
+        const newWord = {
+          word: (formData.get('word') as string).trim(),
+          pronunciation: (formData.get('pronunciation') as string || '').trim(),
+          meaning: (formData.get('meaning') as string).trim(),
+          example: (formData.get('example') as string || '').trim(),
+          category: (formData.get('category') as string || '').trim(),
+          difficulty: formData.get('difficulty') as 'easy' | 'medium' | 'hard',
+        };
+        
+        if (!newWord.word || !newWord.meaning) {
+          alert('单词和释义不能为空');
+          return;
+        }
+        
+        addWord(newWord);
+        addWordForm.reset();
+      });
+    }
+    
+    // 搜索输入
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        searchTerm = (e.target as HTMLInputElement).value;
+        applyFilters();
+      });
+    }
+    
+    // 分页按钮
+    if (prevPageBtn) {
+      prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          updateWordsDisplay();
+        }
+      });
+    }
+    
+    if (nextPageBtn) {
+      nextPageBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(filteredWords.length / pageSize);
+        if (currentPage < totalPages) {
+          currentPage++;
+          updateWordsDisplay();
+        }
+      });
+    }
+    
+    // 学习模式相关
+    if (startLearningBtn) {
+      startLearningBtn.addEventListener('click', startLearningMode);
+    }
+    
+    if (closeLearningBtn) {
+      closeLearningBtn.addEventListener('click', closeLearningMode);
+    }
+    
+    if (showMeaningBtn) {
+      showMeaningBtn.addEventListener('click', toggleMeaning);
+    }
+    
+    if (nextWordBtn) {
+      nextWordBtn.addEventListener('click', nextWord);
+    }
+    
+    // 播放音频按钮
+    const playAudioBtn = document.getElementById('play-audio');
+    if (playAudioBtn) {
+      playAudioBtn.addEventListener('click', () => {
+        playWordAudio(currentWordEl.textContent || '');
+      });
+    }
+  }
+  
+  // 初始化应用
+  document.addEventListener('DOMContentLoaded', init);
+</script> 

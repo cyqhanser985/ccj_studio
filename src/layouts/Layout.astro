@@ -31,41 +31,71 @@ const currentPath = Astro.url.pathname;
               <Search />
             </div>
             
-            <nav class="mr-4 hidden md:block">
-              <ul class="flex space-x-6">
-                <li>
-                  <a 
-                    href="/" 
-                    class={`hover:text-blue-200 ${currentPath === '/' ? 'font-bold border-b-2 border-white pb-1' : ''}`}
-                  >
-                    首页
-                  </a>
-                </li>
-                <li>
-                  <a 
-                    href="/blog" 
-                    class={`hover:text-blue-200 ${currentPath === '/blog' || currentPath.startsWith('/blog/') ? 'font-bold border-b-2 border-white pb-1' : ''}`}
-                  >
-                    博客文章
-                  </a>
-                </li>
-                <li>
-                  <a 
-                    href="/notes" 
-                    class={`hover:text-blue-200 ${currentPath === '/notes' || currentPath.startsWith('/notes/') ? 'font-bold border-b-2 border-white pb-1' : ''}`}
-                  >
-                    学习笔记
-                  </a>
-                </li>
-                <li>
-                  <a 
-                    href="/about" 
-                    class={`hover:text-blue-200 ${currentPath === '/about' ? 'font-bold border-b-2 border-white pb-1' : ''}`}
-                  >
-                    关于
-                  </a>
-                </li>
-              </ul>
+            <!-- 桌面端导航 -->
+            <nav class="mr-4 hidden md:flex items-center">
+              <!-- 主导航项 -->
+              <a 
+                href="/" 
+                class={`px-3 py-2 rounded-md mr-2 hover:bg-blue-500 transition-colors ${currentPath === '/' ? 'bg-blue-700' : ''}`}
+              >
+                首页
+              </a>
+              
+              <!-- 内容下拉菜单 -->
+              <div class="relative group mr-2">
+                <button class="flex items-center px-3 py-2 rounded-md hover:bg-blue-500 transition-colors">
+                  <span>内容</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <div class="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 hidden group-hover:block">
+                  <div class="py-1">
+                    <a 
+                      href="/blog" 
+                      class={`block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 ${currentPath === '/blog' || currentPath.startsWith('/blog/') ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                    >
+                      博客文章
+                    </a>
+                    <a 
+                      href="/notes" 
+                      class={`block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 ${currentPath === '/notes' || currentPath.startsWith('/notes/') ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                    >
+                      学习笔记
+                    </a>
+                    <a 
+                      href="/vocabulary" 
+                      class={`block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 ${currentPath === '/vocabulary' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                    >
+                      单词学习
+                    </a>
+                    <a 
+                      href="/tags" 
+                      class={`block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 ${currentPath === '/tags' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                    >
+                      标签云
+                    </a>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 关于链接 -->
+              <a 
+                href="/about" 
+                class={`px-3 py-2 rounded-md hover:bg-blue-500 transition-colors ${currentPath === '/about' ? 'bg-blue-700' : ''}`}
+              >
+                关于
+              </a>
+              
+              <!-- 开发者模式只在激活后显示 -->
+              <div id="dev-menu-items" class="hidden md:flex">
+                <a 
+                  href="/create" 
+                  class="ml-2 px-3 py-2 bg-green-600 hover:bg-green-700 rounded-md text-white transition-colors"
+                >
+                  创建内容
+                </a>
+              </div>
             </nav>
             
             <!-- 移动端菜单按钮 -->
@@ -89,7 +119,7 @@ const currentPath = Astro.url.pathname;
         
         <!-- 移动端菜单内容 -->
         <div id="mobile-menu" class="mt-4 hidden md:hidden">
-          <nav class="flex flex-col space-y-4">
+          <nav class="flex flex-col space-y-2">
             <a 
               href="/" 
               class={`block py-2 px-4 rounded-md hover:bg-blue-700 ${currentPath === '/' ? 'font-bold bg-blue-700' : ''}`}
@@ -109,15 +139,61 @@ const currentPath = Astro.url.pathname;
               学习笔记
             </a>
             <a 
+              href="/vocabulary" 
+              class={`block py-2 px-4 rounded-md hover:bg-blue-700 ${currentPath === '/vocabulary' ? 'font-bold bg-blue-700' : ''}`}
+            >
+              单词学习
+            </a>
+            <a 
+              href="/tags" 
+              class={`block py-2 px-4 rounded-md hover:bg-blue-700 ${currentPath === '/tags' ? 'font-bold bg-blue-700' : ''}`}
+            >
+              标签云
+            </a>
+            <a 
               href="/about" 
               class={`block py-2 px-4 rounded-md hover:bg-blue-700 ${currentPath === '/about' ? 'font-bold bg-blue-700' : ''}`}
             >
               关于
             </a>
+            
+            <!-- 开发者模式移动端选项，默认隐藏 -->
+            <div id="mobile-dev-menu-items" class="hidden">
+              <a 
+                href="/create" 
+                class="block py-2 px-4 mt-2 bg-green-600 hover:bg-green-700 rounded-md text-white"
+              >
+                创建内容
+              </a>
+            </div>
           </nav>
         </div>
       </div>
     </header>
+    
+    <!-- 开发者模式密码输入模态框 -->
+    <div id="dev-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-gray-900 dark:text-white">开发者模式验证</h2>
+          <button id="close-dev-modal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="mb-4">
+          <label for="dev-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">请输入开发者密码</label>
+          <input type="password" id="dev-password" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+        </div>
+        <div class="flex justify-end">
+          <button id="verify-dev-password" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            验证
+          </button>
+        </div>
+      </div>
+    </div>
+    
     <main class="flex-grow container mx-auto p-6">
       <slot />
     </main>
@@ -174,6 +250,93 @@ const currentPath = Astro.url.pathname;
       if (mobileMenuToggle && mobileMenu) {
         mobileMenuToggle.addEventListener('click', function() {
           mobileMenu.classList.toggle('hidden');
+        });
+      }
+      
+      // 开发者模式逻辑
+      const devPassword = "Cyq20060804";
+      const devModal = document.getElementById('dev-modal');
+      const devPasswordInput = document.getElementById('dev-password');
+      const verifyDevPasswordBtn = document.getElementById('verify-dev-password');
+      const closeDevModalBtn = document.getElementById('close-dev-modal');
+      const devMenuItems = document.getElementById('dev-menu-items');
+      const mobileDevMenuItems = document.getElementById('mobile-dev-menu-items');
+      
+      // 检查是否已激活开发者模式
+      let isDevMode = localStorage.getItem('dev_mode_active') === 'true';
+      if (isDevMode) {
+        showDevModeItems();
+      }
+      
+      // 监听快捷键
+      document.addEventListener('keydown', function(e) {
+        // 检测Ctrl+F1
+        if (e.ctrlKey && e.key === 'F1') {
+          e.preventDefault();
+          showDevModal();
+        }
+      });
+      
+      // 显示开发者模式验证框
+      function showDevModal() {
+        if (devModal) {
+          devModal.classList.remove('hidden');
+          if (devPasswordInput) {
+            devPasswordInput.value = '';
+            devPasswordInput.focus();
+          }
+        }
+      }
+      
+      // 显示开发者模式菜单项
+      function showDevModeItems() {
+        if (devMenuItems) devMenuItems.classList.remove('hidden');
+        if (mobileDevMenuItems) mobileDevMenuItems.classList.remove('hidden');
+      }
+      
+      // 验证开发者密码
+      if (verifyDevPasswordBtn) {
+        verifyDevPasswordBtn.addEventListener('click', verifyPassword);
+      }
+      
+      if (devPasswordInput) {
+        devPasswordInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            verifyPassword();
+          }
+        });
+      }
+      
+      function verifyPassword() {
+        if (devPasswordInput && devPasswordInput.value === devPassword) {
+          isDevMode = true;
+          localStorage.setItem('dev_mode_active', 'true');
+          showDevModeItems();
+          closeDevModal();
+        } else {
+          alert('密码错误，请重试！');
+          if (devPasswordInput) devPasswordInput.value = '';
+        }
+      }
+      
+      // 关闭开发者模式验证框
+      function closeDevModal() {
+        if (devModal) {
+          devModal.classList.add('hidden');
+        }
+      }
+      
+      if (closeDevModalBtn) {
+        closeDevModalBtn.addEventListener('click', closeDevModal);
+      }
+      
+      // 点击模态框外部关闭
+      if (devModal) {
+        devModal.addEventListener('click', function(e) {
+          if (e.target === devModal) {
+            closeDevModal();
+          }
         });
       }
     </script>
