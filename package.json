@@ -9,7 +9,6 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/content": "^0.0.2",
     "@astrojs/markdown-remark": "^6.3.1",
     "astro": "^5.7.12",
     "fuse.js": "^7.0.0",

@@ -69,10 +69,7 @@ export default defineConfig({
     tailwind(),
     searchIndexIntegration()
   ],
-  // 确保内容集合功能正确启用
-  experimental: {
-    contentCollections: true
-  },
+  // 在Astro 5+中，内容集合已经是内置功能，不需要启用实验性标志
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [
