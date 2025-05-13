@@ -10,20 +10,20 @@ const currentPath = Astro.url.pathname;
 <html lang="zh-CN" class="light">
   <head>
     <meta charset="UTF-8" />
-    <meta name="description" content="个人学习Studio - 记录、组织和回顾个人学习历程中的知识点" />
+    <meta name="description" content="林大反卷门驻地 - 一个专注于知识分享、技术探讨和个人成长的空间站" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <!-- KaTeX CSS - 确保完整的样式支持 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" integrity="sha384-GvrOXuhMATgEsSwCs4smul74iXGOixntILdUW9XmUC6+HX0sLNAK3q71HotJqlAn" crossorigin="anonymous">
-    <title>{title ? `${title} - 个人学习Studio` : '个人学习Studio'}</title>
+    <title>{title ? `${title} - 林大反卷门驻地` : '林大反卷门驻地'}</title>
   </head>
   <body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 flex flex-col min-h-screen transition-colors duration-200">
     <header class="bg-blue-600 text-white dark:bg-blue-800 shadow-md">
       <div class="container mx-auto p-4">
         <div class="flex flex-col md:flex-row justify-between items-center">
           <div class="flex items-center mb-4 md:mb-0">
-            <a href="/" class="text-2xl font-bold">个人学习Studio</a>
+            <a href="/" class="text-2xl font-bold">林大反卷门驻地</a>
           </div>
           <div class="flex items-center">
             <!-- 搜索组件 -->
@@ -49,7 +49,7 @@ const currentPath = Astro.url.pathname;
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
-                <div class="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 hidden group-hover:block">
+                <div id="content-dropdown" class="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10 hidden">
                   <div class="py-1">
                     <a 
                       href="/blog" 
@@ -88,7 +88,7 @@ const currentPath = Astro.url.pathname;
               </a>
               
               <!-- 开发者模式只在激活后显示 -->
-              <div id="dev-menu-items" class="hidden md:flex">
+              <div id="dev-menu-items" class="hidden">
                 <a 
                   href="/create" 
                   class="ml-2 px-3 py-2 bg-green-600 hover:bg-green-700 rounded-md text-white transition-colors"
@@ -201,12 +201,14 @@ const currentPath = Astro.url.pathname;
       <div class="container mx-auto">
         <div class="flex flex-col md:flex-row justify-between items-center">
           <div class="mb-4 md:mb-0">
-            <p>&copy; {new Date().getFullYear()} 个人学习Studio</p>
+            <p>&copy; {new Date().getFullYear()} 林大反卷门驻地</p>
           </div>
           <div class="flex space-x-4">
             <a href="/about" class="hover:text-blue-300">关于</a>
             <a href="/blog" class="hover:text-blue-300">博客</a>
             <a href="/notes" class="hover:text-blue-300">笔记</a>
+            <a href="/vocabulary" class="hover:text-blue-300">单词</a>
+            <button id="exit-dev-mode" class="hover:text-blue-300 hidden">退出开发者模式</button>
           </div>
         </div>
       </div>
@@ -256,11 +258,15 @@ const currentPath = Astro.url.pathname;
       // 开发者模式逻辑
       const devPassword = "Cyq20060804";
       const devModal = document.getElementById('dev-modal');
-      const devPasswordInput = document.getElementById('dev-password');
+      const devPasswordInput = document.getElementById('dev-password') as HTMLInputElement;
       const verifyDevPasswordBtn = document.getElementById('verify-dev-password');
       const closeDevModalBtn = document.getElementById('close-dev-modal');
       const devMenuItems = document.getElementById('dev-menu-items');
       const mobileDevMenuItems = document.getElementById('mobile-dev-menu-items');
+      const exitDevModeBtn = document.getElementById('exit-dev-mode');
+      
+      // 默认关闭开发者模式
+      localStorage.removeItem('dev_mode_active');
       
       // 检查是否已激活开发者模式
       let isDevMode = localStorage.getItem('dev_mode_active') === 'true';
@@ -292,6 +298,14 @@ const currentPath = Astro.url.pathname;
       function showDevModeItems() {
         if (devMenuItems) devMenuItems.classList.remove('hidden');
         if (mobileDevMenuItems) mobileDevMenuItems.classList.remove('hidden');
+        if (exitDevModeBtn) exitDevModeBtn.classList.remove('hidden');
+      }
+      
+      // 隐藏开发者模式菜单项
+      function hideDevModeItems() {
+        if (devMenuItems) devMenuItems.classList.add('hidden');
+        if (mobileDevMenuItems) mobileDevMenuItems.classList.add('hidden');
+        if (exitDevModeBtn) exitDevModeBtn.classList.add('hidden');
       }
       
       // 验证开发者密码
@@ -320,6 +334,15 @@ const currentPath = Astro.url.pathname;
         }
       }
       
+      // 退出开发者模式
+      if (exitDevModeBtn) {
+        exitDevModeBtn.addEventListener('click', function() {
+          isDevMode = false;
+          localStorage.removeItem('dev_mode_active');
+          hideDevModeItems();
+        });
+      }
+      
       // 关闭开发者模式验证框
       function closeDevModal() {
         if (devModal) {
@@ -338,6 +361,47 @@ const currentPath = Astro.url.pathname;
             closeDevModal();
           }
         });
+      }
+      
+      // 下拉菜单改进
+      const contentDropdownParent = document.querySelector('.relative.group');
+      const contentDropdown = document.getElementById('content-dropdown');
+      let dropdownTimeout: NodeJS.Timeout | number | undefined;
+      
+      if (contentDropdownParent && contentDropdown) {
+        // 鼠标进入父元素时显示下拉菜单
+        contentDropdownParent.addEventListener('mouseenter', function() {
+          clearTimeout(dropdownTimeout);
+          contentDropdown.classList.remove('hidden');
+        });
+        
+        // 鼠标离开时延迟隐藏
+        contentDropdownParent.addEventListener('mouseleave', function() {
+          dropdownTimeout = setTimeout(() => {
+            contentDropdown.classList.add('hidden');
+          }, 500); // 延迟500毫秒
+        });
+        
+        // 鼠标进入下拉菜单时清除隐藏定时器
+        contentDropdown.addEventListener('mouseenter', function() {
+          clearTimeout(dropdownTimeout);
+        });
+        
+        // 鼠标离开下拉菜单时延迟隐藏
+        contentDropdown.addEventListener('mouseleave', function() {
+          dropdownTimeout = setTimeout(() => {
+            contentDropdown.classList.add('hidden');
+          }, 300); // 延迟300毫秒
+        });
+        
+        // 为移动设备添加点击切换功能
+        const dropdownButton = contentDropdownParent?.querySelector('button');
+        if (dropdownButton && contentDropdown) {
+          dropdownButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            contentDropdown.classList.toggle('hidden');
+          });
+        }
       }
     </script>
   </body>

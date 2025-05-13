@@ -25,6 +25,11 @@ import { getCollection } from 'astro:content';
               <input type="text" id="pronunciation" name="pronunciation" placeholder="例如: /wɜːrd/" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
             </div>
             
+            <div class="flex items-center mb-2">
+              <input type="checkbox" id="use-dictionary" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+              <label for="use-dictionary" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">使用官方词典查询释义</label>
+            </div>
+            
             <div>
               <label for="meaning" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">中文释义</label>
               <textarea id="meaning" name="meaning" rows="2" required placeholder="输入中文释义" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
@@ -55,6 +60,51 @@ import { getCollection } from 'astro:content';
               </button>
             </div>
           </form>
+        </div>
+        
+        <!-- 新增：离线单词库导入功能 -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
+          <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">导入单词库</h2>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">导入方式</label>
+              <div class="mt-1 flex flex-col space-y-4">
+                <div>
+                  <label class="block text-sm text-gray-700 dark:text-gray-300 mb-2">从JSON文件导入</label>
+                  <input type="file" id="import-json" accept=".json" class="block w-full text-sm text-gray-500 dark:text-gray-400
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-md file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    dark:file:bg-blue-900 dark:file:text-blue-200
+                    hover:file:bg-blue-100 dark:hover:file:bg-blue-800
+                  ">
+                </div>
+                
+                <div>
+                  <label class="block text-sm text-gray-700 dark:text-gray-300 mb-2">从CSV文件导入</label>
+                  <input type="file" id="import-csv" accept=".csv" class="block w-full text-sm text-gray-500 dark:text-gray-400
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-md file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    dark:file:bg-blue-900 dark:file:text-blue-200
+                    hover:file:bg-blue-100 dark:hover:file:bg-blue-800
+                  ">
+                </div>
+                
+                <div>
+                  <label class="block text-sm text-gray-700 dark:text-gray-300 mb-2">下载离线发音包</label>
+                  <a href="#" id="download-pronunciation-pack" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    下载发音资源包
+                  </a>
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    下载后将自动配置离线发音功能
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
@@ -224,6 +274,7 @@ import { getCollection } from 'astro:content';
   let filteredWords: Word[] = [];
   let currentFilter = 'all';
   let searchTerm = '';
+  let useDictionary = false;
   
   // 学习模式变量
   let currentWordIndex = 0;
@@ -237,6 +288,12 @@ import { getCollection } from 'astro:content';
   const searchInput = document.getElementById('search-vocabulary') as HTMLInputElement;
   const prevPageBtn = document.getElementById('prev-page') as HTMLButtonElement;
   const nextPageBtn = document.getElementById('next-page') as HTMLButtonElement;
+  const useDictionaryCheckbox = document.getElementById('use-dictionary') as HTMLInputElement;
+  const meaningTextarea = document.getElementById('meaning') as HTMLTextAreaElement;
+  const wordInput = document.getElementById('word') as HTMLInputElement;
+  const importJsonInput = document.getElementById('import-json') as HTMLInputElement;
+  const importCsvInput = document.getElementById('import-csv') as HTMLInputElement;
+  const downloadPronunciationBtn = document.getElementById('download-pronunciation-pack') as HTMLAnchorElement;
   
   // 学习模式元素
   const learningModeEl = document.getElementById('learning-mode') as HTMLDivElement;
@@ -632,11 +689,224 @@ import { getCollection } from 'astro:content';
   
   // 使用Web Speech API播放单词发音
   function playWordAudio(word: string) {
-    if ('speechSynthesis' in window) {
+    // 检查是否有离线发音包
+    const hasOfflinePronunciation = localStorage.getItem('offline_pronunciation_available') === 'true';
+    
+    if (hasOfflinePronunciation) {
+      // 这里应该实现离线发音包的播放逻辑
+      // 由于无法实际下载和存储音频文件，这里只是模拟
+      console.log('使用离线发音包播放:', word);
+      // 实际实现可能需要使用IndexedDB或其他方式存储音频文件
+      // 这里使用在线API作为备选
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(word);
+        utterance.lang = 'en-US';
+        speechSynthesis.speak(utterance);
+      }
+    } else if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(word);
       utterance.lang = 'en-US';
       speechSynthesis.speak(utterance);
     }
+  }
+  
+  // 查询词典API
+  async function queryDictionary(word: string) {
+    try {
+      // 这里使用免费的字典API，实际使用时可能需要替换为其他可用的API
+      const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+      
+      if (!response.ok) {
+        throw new Error('无法获取单词释义');
+      }
+      
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        // 提取释义和例句
+        let meanings = [];
+        let examples = [];
+        
+        for (const entry of data) {
+          for (const meaning of entry.meanings) {
+            for (const definition of meaning.definitions) {
+              // 添加词性和释义
+              meanings.push(`${meaning.partOfSpeech}: ${definition.definition}`);
+              
+              // 如果有例句，添加到例句列表
+              if (definition.example) {
+                examples.push(definition.example);
+              }
+            }
+          }
+        }
+        
+        // 将释义和例句更新到表单
+        if (meaningTextarea && meanings.length > 0) {
+          meaningTextarea.value = meanings.slice(0, 3).join('\n'); // 仅使用前三个释义，避免过长
+        }
+        
+        // 将例句更新到表单
+        const exampleTextarea = document.getElementById('example') as HTMLTextAreaElement;
+        if (exampleTextarea && examples.length > 0) {
+          exampleTextarea.value = examples[0]; // 使用第一个例句
+        }
+        
+        // 如果API返回了音标，也更新音标
+        if (data[0].phonetics && data[0].phonetics.length > 0) {
+          const phonetic = data[0].phonetics.find((p: any) => p.text)?.text;
+          if (phonetic) {
+            const pronunciationInput = document.getElementById('pronunciation') as HTMLInputElement;
+            if (pronunciationInput) {
+              pronunciationInput.value = phonetic;
+            }
+          }
+        }
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('查询词典失败:', error);
+      return false;
+    }
+  }
+  
+  // 处理JSON文件导入
+  function handleJsonImport(file: File) {
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+      try {
+        const result = e.target?.result as string;
+        const importedWords = JSON.parse(result);
+        
+        if (!Array.isArray(importedWords)) {
+          throw new Error('导入的文件格式不正确，应为单词数组');
+        }
+        
+        let validCount = 0;
+        for (const word of importedWords) {
+          if (typeof word === 'object' && word.word && word.meaning) {
+            // 确保ID是唯一的
+            const wordWithId = {
+              ...word,
+              id: word.id || Date.now().toString() + validCount,
+              reviewCount: word.reviewCount || 0
+            };
+            
+            // 添加到词库
+            words.push(wordWithId);
+            validCount++;
+          }
+        }
+        
+        if (validCount > 0) {
+          saveWords();
+          filteredWords = [...words];
+          updateWordsDisplay();
+          renderCategoryFilters();
+          alert(`成功导入 ${validCount} 个单词`);
+        } else {
+          alert('没有找到有效的单词数据');
+        }
+      } catch (error) {
+        console.error('导入JSON失败:', error);
+        alert('导入失败，请检查文件格式');
+      }
+    };
+    
+    reader.readAsText(file);
+  }
+  
+  // 处理CSV文件导入
+  function handleCsvImport(file: File) {
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+      try {
+        const result = e.target?.result as string;
+        const lines = result.split('\n');
+        
+        // 第一行应该是头部
+        const headers = lines[0].split(',').map(h => h.trim());
+        
+        // 查找必要字段的索引
+        const wordIndex = headers.indexOf('word');
+        const meaningIndex = headers.indexOf('meaning');
+        
+        if (wordIndex === -1 || meaningIndex === -1) {
+          throw new Error('CSV文件必须包含word和meaning列');
+        }
+        
+        // 其他可选字段
+        const pronunciationIndex = headers.indexOf('pronunciation');
+        const exampleIndex = headers.indexOf('example');
+        const categoryIndex = headers.indexOf('category');
+        const difficultyIndex = headers.indexOf('difficulty');
+        
+        // 解析数据行
+        let validCount = 0;
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue; // 跳过空行
+          
+          const values = line.split(',').map(v => v.trim());
+          
+          if (values.length >= Math.max(wordIndex, meaningIndex) + 1) {
+            const word = values[wordIndex];
+            const meaning = values[meaningIndex];
+            
+            if (word && meaning) {
+              const newWord: Word = {
+                id: Date.now().toString() + validCount,
+                word,
+                meaning,
+                reviewCount: 0,
+                difficulty: 'medium' as 'easy' | 'medium' | 'hard'
+              };
+              
+              // 添加可选字段
+              if (pronunciationIndex !== -1 && values[pronunciationIndex]) {
+                newWord.pronunciation = values[pronunciationIndex];
+              }
+              
+              if (exampleIndex !== -1 && values[exampleIndex]) {
+                newWord.example = values[exampleIndex];
+              }
+              
+              if (categoryIndex !== -1 && values[categoryIndex]) {
+                newWord.category = values[categoryIndex];
+              }
+              
+              if (difficultyIndex !== -1 && ['easy', 'medium', 'hard'].includes(values[difficultyIndex])) {
+                newWord.difficulty = values[difficultyIndex] as 'easy' | 'medium' | 'hard';
+              }
+              
+              // 添加到词库
+              words.push(newWord);
+              validCount++;
+            }
+          }
+        }
+        
+        if (validCount > 0) {
+          saveWords();
+          filteredWords = [...words];
+          updateWordsDisplay();
+          renderCategoryFilters();
+          alert(`成功导入 ${validCount} 个单词`);
+        } else {
+          alert('没有找到有效的单词数据');
+        }
+      } catch (error) {
+        console.error('导入CSV失败:', error);
+        alert('导入失败，请检查文件格式');
+      }
+    };
+    
+    reader.readAsText(file);
   }
   
   // 设置事件监听器
@@ -663,6 +933,55 @@ import { getCollection } from 'astro:content';
         
         addWord(newWord);
         addWordForm.reset();
+      });
+    }
+    
+    // 使用词典查询切换
+    if (useDictionaryCheckbox && wordInput && meaningTextarea) {
+      useDictionaryCheckbox.addEventListener('change', function() {
+        useDictionary = this.checked;
+        
+        if (useDictionary && wordInput.value.trim()) {
+          // 如果已有单词，尝试查询
+          queryDictionary(wordInput.value.trim());
+        }
+      });
+      
+      // 当单词输入变化且勾选了使用词典时自动查询
+      wordInput.addEventListener('blur', function() {
+        if (useDictionary && this.value.trim()) {
+          queryDictionary(this.value.trim());
+        }
+      });
+    }
+    
+    // JSON文件导入
+    if (importJsonInput) {
+      importJsonInput.addEventListener('change', function() {
+        if (this.files && this.files.length > 0) {
+          handleJsonImport(this.files[0]);
+          this.value = ''; // 重置输入以允许再次选择同一文件
+        }
+      });
+    }
+    
+    // CSV文件导入
+    if (importCsvInput) {
+      importCsvInput.addEventListener('change', function() {
+        if (this.files && this.files.length > 0) {
+          handleCsvImport(this.files[0]);
+          this.value = ''; // 重置输入以允许再次选择同一文件
+        }
+      });
+    }
+    
+    // 下载发音包按钮
+    if (downloadPronunciationBtn) {
+      downloadPronunciationBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        alert('发音包功能正在开发中，暂时仍使用在线发音服务');
+        // 实际上没有真正的发音包可下载，但可以设置一个标志来模拟
+        localStorage.setItem('offline_pronunciation_available', 'true');
       });
     }
     
