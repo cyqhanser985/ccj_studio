@@ -21,6 +21,11 @@ const tags = [...new Set(allEntries
   <div class="max-w-4xl mx-auto py-8 px-4">
     <h1 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white">创建新内容</h1>
     
+    <div id="debug-panel" class="bg-gray-100 dark:bg-gray-900 border-l-4 border-blue-500 p-4 mb-6 rounded-lg hidden">
+      <h3 class="text-lg font-semibold mb-2">调试信息</h3>
+      <pre id="debug-log" class="text-xs overflow-auto max-h-32 bg-white dark:bg-gray-800 p-2 rounded">等待日志...</pre>
+    </div>
+    
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
       <form id="create-form" class="space-y-6">
         <div>
@@ -34,6 +39,12 @@ const tags = [...new Set(allEntries
         <div>
           <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">标题</label>
           <input type="text" id="title" name="title" required placeholder="输入标题" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+        </div>
+        
+        <div>
+          <label for="filename" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">文件名</label>
+          <input type="text" id="filename" name="filename" placeholder="输入文件名（不含扩展名，留空则自动生成）" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">仅使用英文、数字、连字符和下划线，不含扩展名。留空将根据标题自动生成。</p>
         </div>
         
         <div>
@@ -106,6 +117,62 @@ const tags = [...new Set(allEntries
 </Layout>
 
 <script>
+  // 显示调试日志
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const debugPanel = document.getElementById('debug-panel') as HTMLDivElement;
+  const debugLog = document.getElementById('debug-log') as HTMLPreElement;
+  
+  // 仅在localhost下显示调试面板
+  if (isLocalhost) {
+    debugPanel.classList.remove('hidden');
+    
+    // 捕获控制台日志
+    const originalConsoleLog = console.log;
+    const originalConsoleError = console.error;
+    const originalConsoleWarn = console.warn;
+    
+    const logToDebugPanel = (type: string, ...args: any[]) => {
+      try {
+        const timestamp = new Date().toLocaleTimeString();
+        const formattedArgs = args.map(arg => {
+          if (typeof arg === 'object') {
+            return JSON.stringify(arg, null, 2);
+          }
+          return String(arg);
+        }).join(' ');
+        
+        const logEntry = `[${timestamp}] [${type}] ${formattedArgs}`;
+        debugLog.textContent = logEntry + '\n' + debugLog.textContent;
+      } catch (e) {
+        // 忽略记录错误
+      }
+    };
+    
+    console.log = (...args) => {
+      originalConsoleLog.apply(console, args);
+      logToDebugPanel('LOG', ...args);
+    };
+    
+    console.error = (...args) => {
+      originalConsoleError.apply(console, args);
+      logToDebugPanel('ERROR', ...args);
+    };
+    
+    console.warn = (...args) => {
+      originalConsoleWarn.apply(console, args);
+      logToDebugPanel('WARN', ...args);
+    };
+    
+    // 捕获全局错误
+    window.addEventListener('error', (event) => {
+      logToDebugPanel('GLOBAL ERROR', event.message, 'at', event.filename, 'line', event.lineno);
+    });
+    
+    window.addEventListener('unhandledrejection', (event) => {
+      logToDebugPanel('UNHANDLED PROMISE', event.reason);
+    });
+  }
+
   // 标签管理
   const tagInput = document.getElementById('tag-input') as HTMLInputElement;
   const addTagButton = document.getElementById('add-tag') as HTMLButtonElement;
@@ -187,17 +254,29 @@ const tags = [...new Set(allEntries
     const formData = new FormData(form);
     const contentType = formData.get('content-type') as string;
     const title = formData.get('title') as string;
+    const filename = formData.get('filename') as string || '';
     const description = formData.get('description') as string || '';
     const category = formData.get('category') as string || '';
     const content = formData.get('content') as string;
     const date = new Date().toISOString();
     
-    // 创建文件名（使用标题的 slug 版本）
-    const slug = title
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '') // 移除特殊字符
-      .replace(/\s+/g, '-') // 空格替换为连字符
-      .replace(/--+/g, '-'); // 移除连续连字符
+    // 创建文件名（使用用户输入的文件名或根据标题生成）
+    let slug = filename.trim();
+    if (!slug) {
+      // 如果没有提供文件名，则根据标题生成
+      slug = title
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '') // 移除特殊字符
+        .replace(/\s+/g, '-') // 空格替换为连字符
+        .replace(/--+/g, '-'); // 移除连续连字符
+    } else {
+      // 确保文件名符合规范
+      slug = slug
+        .toLowerCase()
+        .replace(/[^\w\s-_]/g, '') // 只允许字母、数字、连字符和下划线
+        .replace(/\s+/g, '-')
+        .replace(/--+/g, '-');
+    }
     
     // 构建 frontmatter
     const frontmatter = `---
@@ -212,32 +291,53 @@ draft: false
 ${content}`;
 
     try {
+      // 确保数据格式正确
+      const requestData = {
+        contentType,
+        slug,
+        frontmatter
+      };
+      
+      console.log('准备发送创建内容请求:', {
+        contentType,
+        slug,
+        frontmatterLength: frontmatter.length
+      });
+      
       // 发送到服务器创建文件的请求
       const response = await fetch('/api/create-content', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          contentType,
-          slug,
-          frontmatter
-        }),
+        body: JSON.stringify(requestData),
       });
       
+      console.log('服务器响应状态:', response.status);
+      
+      // 获取响应文本，以便于调试
+      const responseText = await response.text();
+      console.log('响应文本:', responseText);
+      
+      // 尝试解析JSON
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error('解析响应JSON失败:', jsonError);
+        throw new Error(`服务器响应无效: ${responseText}`);
+      }
+      
       if (response.ok) {
-        const data = await response.json();
-        
         // 显示成功消息并重定向
         alert('内容创建成功！');
-        window.location.href = data.url;
+        window.location.href = responseData.url;
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || '创建内容失败');
+        throw new Error(responseData.message || '创建内容失败');
       }
-    } catch (error) {
-      alert(`错误: ${error instanceof Error ? error.message : '未知错误'}`);
-      console.error('创建内容错误:', error);
+    } catch (error: unknown) {
+      console.error('创建内容过程中出现错误:', error);
+      alert(`创建内容失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   });
   
@@ -266,4 +366,4 @@ ${content}`;
       previewModal.classList.add('hidden');
     }
   });
-</script> 
+</script>

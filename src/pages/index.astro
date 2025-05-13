@@ -4,13 +4,28 @@ import Layout from '../layouts/Layout.astro';
 import PostCard from '../components/PostCard.astro';
 import AuthorCard from '../components/AuthorCard.astro';
 
+// 设置为服务器渲染模式
+export const prerender = false;
+
 // 定义条目类型
 type BlogEntry = CollectionEntry<'blog'>;
 type NotesEntry = CollectionEntry<'notes'>;
 
 // 获取博客文章和笔记
-const blogEntries = await getCollection('blog', ({ data }: BlogEntry) => !data.draft);
-const notesEntries = await getCollection('notes', ({ data }: NotesEntry) => !data.draft);
+let blogEntries: BlogEntry[] = [];
+let notesEntries: NotesEntry[] = [];
+
+try {
+  blogEntries = await getCollection('blog', ({ data }: BlogEntry) => !data.draft);
+} catch (error) {
+  console.error('获取博客集合时出错:', error);
+}
+
+try {
+  notesEntries = await getCollection('notes', ({ data }: NotesEntry) => !data.draft);
+} catch (error) {
+  console.error('获取笔记集合时出错:', error);
+}
 
 // 按日期排序
 const recentBlogs = blogEntries
@@ -86,7 +101,6 @@ function formatDate(date: Date): string {
                 date={blog.data.date}
                 category={blog.data.category}
                 tags={blog.data.tags}
-                featured={index === 0}
               />
             ))}
           </div>

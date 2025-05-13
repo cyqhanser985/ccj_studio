@@ -65,6 +65,7 @@ const katexOptions = {
 
 // https://astro.build/config
 export default defineConfig({
+  output: 'server',  // 设置为服务器模式以支持API路由
   integrations: [
     tailwind(),
     searchIndexIntegration()

@@ -2,11 +2,20 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
 
+// 设置为服务器渲染模式
+export const prerender = false;
+
 // 定义笔记条目类型
 type NotesEntry = CollectionEntry<'notes'>;
 
 // 获取所有非草稿的笔记
-const notesEntries = await getCollection('notes', ({ data }: NotesEntry) => !data.draft);
+let notesEntries: NotesEntry[] = [];
+try {
+  notesEntries = await getCollection('notes', ({ data }: NotesEntry) => !data.draft);
+} catch (error) {
+  console.error('获取笔记集合时出错:', error);
+  notesEntries = [];
+}
 
 // 按日期排序
 const sortedEntries = notesEntries

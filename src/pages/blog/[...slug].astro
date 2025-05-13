@@ -1,25 +1,41 @@
 ---
-import { getCollection, type CollectionEntry } from 'astro:content';
+import { getCollection, getEntry, type CollectionEntry } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 
 // 定义博客条目的类型
 type BlogEntry = CollectionEntry<'blog'>;
 type BlogData = BlogEntry['data'];
 
-// 获取文章集合并排除草稿
-export async function getStaticPaths() {
-  const blogEntries = await getCollection('blog', ({ data }: BlogEntry) => {
-    return import.meta.env.PROD ? !data.draft : true;
-  });
-  
-  return blogEntries.map((entry: BlogEntry) => ({
-    params: { slug: entry.slug },
-    props: { entry },
-  }));
+// 在服务器模式下，我们不使用getStaticPaths
+// 而是在每个请求中直接获取内容
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/blog');
 }
 
-const { entry } = Astro.props as { entry: BlogEntry };
-const { Content } = await entry.render();
+// 尝试获取文章
+let entry;
+try {
+  entry = await getEntry('blog', slug);
+  
+  if (!entry) {
+    return Astro.redirect('/404');
+  }
+} catch (error) {
+  console.error('无法获取博客文章:', error);
+  return Astro.redirect('/404');
+}
+
+// 渲染内容
+let Content;
+try {
+  const rendered = await entry.render();
+  Content = rendered.Content;
+} catch (error) {
+  console.error('渲染博客文章时出错:', error);
+  return Astro.redirect('/500');
+}
 
 // 格式化日期
 const formattedDate = new Date(entry.data.date).toLocaleDateString('zh-CN', {
@@ -27,6 +43,9 @@ const formattedDate = new Date(entry.data.date).toLocaleDateString('zh-CN', {
   month: 'long',
   day: 'numeric'
 });
+
+// 设置预渲染为false
+export const prerender = false;
 ---
 
 <Layout title={entry.data.title}>

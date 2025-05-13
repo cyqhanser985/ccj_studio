@@ -4,11 +4,20 @@ import Layout from '../layouts/Layout.astro';
 import AuthorCard from '../components/AuthorCard.astro';
 import PostCard from '../components/PostCard.astro';
 
+// 设置为服务器渲染模式
+export const prerender = false;
+
 // 定义博客条目类型
 type BlogEntry = CollectionEntry<'blog'>;
 
 // 获取所有非草稿的博客文章
-const blogEntries = await getCollection('blog', ({ data }: BlogEntry) => !data.draft);
+let blogEntries: BlogEntry[] = [];
+try {
+  blogEntries = await getCollection('blog', ({ data }: BlogEntry) => !data.draft);
+} catch (error) {
+  console.error('获取博客集合时出错:', error);
+  blogEntries = [];
+}
 
 // 按日期排序
 const sortedEntries = blogEntries
@@ -44,24 +53,9 @@ function formatDate(date: Date): string {
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
       <!-- 文章列表 -->
       <div class="lg:col-span-3">
-        <!-- 特色文章 - 最新的一篇文章会被高亮展示 -->
-        {sortedEntries.length > 0 && (
-          <div class="mb-8">
-            <PostCard 
-              title={sortedEntries[0].data.title}
-              description={sortedEntries[0].data.description}
-              url={`/blog/${sortedEntries[0].slug}`}
-              date={sortedEntries[0].data.date}
-              category={sortedEntries[0].data.category}
-              tags={sortedEntries[0].data.tags}
-              featured={true}
-            />
-          </div>
-        )}
-        
-        <!-- 其余文章 -->
+        <!-- 所有文章使用统一风格展示 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {sortedEntries.slice(1).map((blog: BlogEntry) => (
+          {sortedEntries.map((blog: BlogEntry) => (
             <PostCard 
               title={blog.data.title}
               description={blog.data.description}
