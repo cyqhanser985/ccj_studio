@@ -6,6 +6,7 @@ import remarkMath from 'remark-math';
 import { rehypeHeadingIds } from '@astrojs/markdown-remark';
 import rehypePrettyCode from 'rehype-pretty-code';
 import searchIndexIntegration from './src/integrations/search-index.ts';
+import netlify from '@astrojs/netlify';
 
 // 定义节点类型以避免隐式any错误
 /**
@@ -66,6 +67,7 @@ const katexOptions = {
 // https://astro.build/config
 export default defineConfig({
   output: 'server',  // 设置为服务器模式以支持API路由
+  adapter: netlify(),  // 添加Netlify适配器
   integrations: [
     tailwind(),
     searchIndexIntegration()
