@@ -1,5 +1,4 @@
 ---
-// 声明这个组件需要客户端交互
 ---
 <div class="search-container relative">
   <div class="search-input-wrapper flex items-center relative">
@@ -22,6 +21,174 @@
     <ul id="results-list" class="divide-y divide-gray-200 dark:divide-gray-700"></ul>
   </div>
 </div>
+
+<script>
+  // 暂存所有内容数据的变量
+  let allContent: any[] = [];
+  
+  // 导入 Fuse.js
+  import Fuse from 'fuse.js';
+  
+  // 初始化 Fuse 实例
+  let fuse: Fuse<any> | null = null;
+  
+  // 获取DOM元素
+  const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+  const searchResults = document.getElementById('search-results') as HTMLDivElement | null;
+  const resultsList = document.getElementById('results-list') as HTMLUListElement | null;
+  const noResults = document.getElementById('no-results') as HTMLDivElement | null;
+  
+  // 配置 Fuse.js 选项
+  const fuseOptions = {
+    includeScore: true,
+    threshold: 0.4,
+    keys: [
+      'title',
+      'description',
+      'content',
+      'category',
+      'tags'
+    ]
+  };
+  
+  // 加载内容数据
+  async function loadContentData() {
+    try {
+      // 首先尝试使用fetch API
+      const response = await fetch('/search-data.json');
+      
+      // 检查响应状态
+      if (!response.ok) {
+        throw new Error(`HTTP 错误! 状态: ${response.status}`);
+      }
+      
+      // 解析JSON数据
+      const data = await response.json();
+      
+      // 确保数据有效性
+      if (Array.isArray(data)) {
+        allContent = data;
+        
+        // 初始化 Fuse 实例
+        fuse = new Fuse(allContent, fuseOptions);
+        console.log('搜索数据加载成功:', allContent.length, '条记录');
+      } else {
+        console.error('搜索数据格式无效:', data);
+      }
+    } catch (error) {
+      console.error('加载搜索数据失败:', error);
+      
+      // 使用备用策略 - 如果在生产环境中，这可以是一个备用措施
+      try {
+        // 如果没有数据，显示通知或禁用搜索
+        if (searchInput) {
+          searchInput.placeholder = '搜索功能临时不可用';
+          searchInput.disabled = true;
+        }
+      } catch (fallbackError) {
+        console.error('备用错误处理也失败:', fallbackError);
+      }
+    }
+  }
+  
+  // 搜索功能
+  function performSearch(query: string) {
+    if (!query || query.length < 2 || !searchResults) {
+      if (searchResults) searchResults.classList.add('hidden');
+      return;
+    }
+    
+    if (!fuse) {
+      // 如果fuse实例不可用，尝试再次加载数据
+      loadContentData().then(() => {
+        if (fuse) performSearch(query);
+      });
+      return;
+    }
+    
+    const results = fuse.search(query);
+    displayResults(results);
+  }
+  
+  // 显示搜索结果
+  function displayResults(results: Array<{item: any, refIndex: number, score?: number}>) {
+    if (!resultsList || !noResults || !searchResults) return;
+    
+    // 清空之前的结果
+    resultsList.innerHTML = '';
+    
+    if (results.length === 0) {
+      noResults.classList.remove('hidden');
+      resultsList.classList.add('hidden');
+    } else {
+      noResults.classList.add('hidden');
+      resultsList.classList.remove('hidden');
+      
+      // 构建结果列表
+      results.slice(0, 10).forEach(result => {
+        const item = result.item;
+        const li = document.createElement('li');
+        li.className = 'p-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150';
+        
+        // 构建搜索结果的HTML
+        li.innerHTML = `
+          <a href="${item.url}" class="block">
+            <div class="font-medium text-blue-600 dark:text-blue-400">${item.title}</div>
+            <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">${item.description || ''}</div>
+            <div class="flex flex-wrap gap-2 mt-2">
+              ${item.category ? `<span class="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">${item.category}</span>` : ''}
+              ${item.tags && item.tags.length ? item.tags.map((tag: string) => `<span class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded">${tag}</span>`).join('') : ''}
+            </div>
+          </a>
+        `;
+        
+        resultsList.appendChild(li);
+      });
+    }
+    
+    searchResults.classList.remove('hidden');
+  }
+  
+  // 初始化事件监听器
+  function initSearchEvents() {
+    if (!searchInput || !searchResults) return;
+    
+    // 监听输入事件
+    searchInput.addEventListener('input', (e) => {
+      const target = e.target as HTMLInputElement;
+      const query = target.value.trim();
+      performSearch(query);
+    });
+    
+    // 监听点击事件（点击外部区域关闭搜索结果）
+    document.addEventListener('click', (e) => {
+      if (searchResults && !searchResults.contains(e.target as Node) && e.target !== searchInput) {
+        searchResults.classList.add('hidden');
+      }
+    });
+    
+    // 监听聚焦事件
+    searchInput.addEventListener('focus', () => {
+      const query = searchInput.value.trim();
+      if (query && query.length >= 2) {
+        performSearch(query);
+      }
+    });
+    
+    // 监听键盘事件（如ESC键关闭搜索结果）
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && searchResults) {
+        searchResults.classList.add('hidden');
+      }
+    });
+  }
+  
+  // 当页面加载完成后执行
+  document.addEventListener('DOMContentLoaded', async () => {
+    await loadContentData();
+    initSearchEvents();
+  });
+</script>
 
 <style>
   .search-results {
