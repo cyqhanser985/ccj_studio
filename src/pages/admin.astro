@@ -39,10 +39,6 @@ const notesEntries = await getCollection('notes');
             <div class="text-3xl font-bold text-green-600 dark:text-green-300">{notesEntries.length}</div>
             <div class="text-sm text-gray-600 dark:text-gray-400">学习笔记</div>
           </div>
-          <div class="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg">
-            <div class="text-3xl font-bold text-purple-600 dark:text-purple-300" id="vocabulary-count">0</div>
-            <div class="text-sm text-gray-600 dark:text-gray-400">单词数量</div>
-          </div>
         </div>
       </div>
       
@@ -145,7 +141,6 @@ const notesEntries = await getCollection('notes');
   const avatarForm = document.getElementById('avatar-form');
   const avatarUpload = document.getElementById('avatar-upload');
   const avatarPreview = document.getElementById('avatar-preview');
-  const vocabularyCount = document.getElementById('vocabulary-count');
   
   // 检查是否已登录
   let isLoggedIn = localStorage.getItem('admin_logged_in') === 'true';
@@ -178,7 +173,6 @@ const notesEntries = await getCollection('notes');
     
     // 载入作者信息
     loadAuthorInfo();
-    loadStats();
   }
   
   // 显示登录面板
@@ -350,20 +344,6 @@ const notesEntries = await getCollection('notes');
     } catch (error) {
       console.error('上传头像API调用失败:', error);
       throw error;
-    }
-  }
-  
-  // 加载统计信息
-  function loadStats() {
-    // 获取单词数量
-    try {
-      const vocabularyData = localStorage.getItem('vocabulary_words');
-      if (vocabularyData && vocabularyCount) {
-        const words = JSON.parse(vocabularyData);
-        vocabularyCount.textContent = words.length.toString();
-      }
-    } catch (error) {
-      console.error('加载统计失败:', error);
     }
   }
   

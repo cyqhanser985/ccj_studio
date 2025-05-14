@@ -28,26 +28,13 @@
   let allContent = [];
   
   // 导入 Fuse.js
-  import * as FuseModule from 'fuse.js';
-  
-  // 定义搜索数据项的接口
-  interface SearchItem {
-    title: string;
-    description?: string;
-    content?: string;
-    category?: string;
-    tags?: string[];
-    url: string;
-  }
-  
-  // 初始化 Fuse 实例
-  let fuse: FuseModule.default<SearchItem> | null = null;
+  import Fuse from 'fuse.js';
   
   // 获取DOM元素
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-  const searchResults = document.getElementById('search-results') as HTMLElement | null;
-  const resultsList = document.getElementById('results-list') as HTMLUListElement | null;
-  const noResults = document.getElementById('no-results') as HTMLElement | null;
+  const searchResultsContainer = document.getElementById('search-results');
+  const resultsList = document.getElementById('results-list');
+  const noResults = document.getElementById('no-results');
   
   // 配置 Fuse.js 选项
   const fuseOptions = {
@@ -78,10 +65,10 @@
       
       // 确保数据有效性
       if (Array.isArray(data)) {
-        allContent = data as SearchItem[];
+        allContent = data;
         
         // 初始化 Fuse 实例
-        fuse = new FuseModule.default(allContent, fuseOptions);
+        fuseInstance = new Fuse(allContent, fuseOptions);
         console.log('搜索数据加载成功:', allContent.length, '条记录');
       } else {
         console.error('搜索数据格式无效:', data);
@@ -89,7 +76,7 @@
     } catch (error) {
       console.error('加载搜索数据失败:', error);
       
-      // 使用备用策略 - 如果在生产环境中，这可以是一个备用措施
+      // 使用备用策略
       try {
         // 如果没有数据，显示通知或禁用搜索
         if (searchInput) {
@@ -102,28 +89,31 @@
     }
   }
   
+  // Fuse实例
+  let fuseInstance = null;
+  
   // 搜索功能
   function performSearch(query: string) {
-    if (!query || query.length < 2 || !searchResults) {
-      if (searchResults) searchResults.classList.add('hidden');
+    if (!query || query.length < 2 || !searchResultsContainer) {
+      if (searchResultsContainer) searchResultsContainer.classList.add('hidden');
       return;
     }
     
-    if (!fuse) {
+    if (!fuseInstance) {
       // 如果fuse实例不可用，尝试再次加载数据
       loadContentData().then(() => {
-        if (fuse) performSearch(query);
+        if (fuseInstance) performSearch(query);
       });
       return;
     }
     
-    const results = fuse.search(query);
-    displayResults(results as FuseModule.FuseResult<SearchItem>[]);
+    const searchResults = fuseInstance.search(query);
+    displayResults(searchResults);
   }
   
   // 显示搜索结果
-  function displayResults(results: FuseModule.FuseResult<SearchItem>[]) {
-    if (!resultsList || !noResults || !searchResults) return;
+  function displayResults(results: any[]) {
+    if (!resultsList || !noResults || !searchResultsContainer) return;
     
     // 清空之前的结果
     resultsList.innerHTML = '';
@@ -142,13 +132,20 @@
         li.className = 'p-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150';
         
         // 构建搜索结果的HTML
+        let tagsHtml = '';
+        if (item.tags && item.tags.length) {
+          tagsHtml = item.tags.map((tag: string) => 
+            `<span class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded">${tag}</span>`
+          ).join('');
+        }
+        
         li.innerHTML = `
           <a href="${item.url}" class="block">
             <div class="font-medium text-blue-600 dark:text-blue-400">${item.title}</div>
             <div class="text-sm text-gray-600 dark:text-gray-300 mt-1">${item.description || ''}</div>
             <div class="flex flex-wrap gap-2 mt-2">
               ${item.category ? `<span class="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">${item.category}</span>` : ''}
-              ${item.tags && item.tags.length ? item.tags.map((tag: string) => `<span class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded">${tag}</span>`).join('') : ''}
+              ${tagsHtml}
             </div>
           </a>
         `;
@@ -157,7 +154,7 @@
       });
     }
     
-    searchResults.classList.remove('hidden');
+    searchResultsContainer.classList.remove('hidden');
   }
   
   // 事件监听器
@@ -174,8 +171,9 @@
   }
   
   document.addEventListener('click', (event) => {
-    if (searchResults && inputElement && !searchResults.contains(event.target as Node) && event.target !== inputElement) {
-      searchResults.classList.add('hidden');
+    const target = event.target as Node;
+    if (searchResultsContainer && inputElement && target && !searchResultsContainer.contains(target) && target !== inputElement) {
+      searchResultsContainer.classList.add('hidden');
     }
   });
   
@@ -198,7 +196,10 @@
   function initSearchEvents() {
     document.querySelectorAll('.search-trigger').forEach(trigger => {
       trigger.addEventListener('click', () => {
-        document.getElementById('search-input')?.focus();
+        const searchInputElement = document.getElementById('search-input') as HTMLInputElement | null;
+        if (searchInputElement) {
+          searchInputElement.focus();
+        }
       });
     });
   }

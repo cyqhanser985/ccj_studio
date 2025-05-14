@@ -64,12 +64,6 @@ const currentPath = Astro.url.pathname;
                       学习笔记
                     </a>
                     <a 
-                      href="/vocabulary" 
-                      class={`block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 ${currentPath === '/vocabulary' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
-                    >
-                      单词学习
-                    </a>
-                    <a 
                       href="/tags" 
                       class={`block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 ${currentPath === '/tags' ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
                     >
@@ -139,12 +133,6 @@ const currentPath = Astro.url.pathname;
               学习笔记
             </a>
             <a 
-              href="/vocabulary" 
-              class={`block py-2 px-4 rounded-md hover:bg-blue-700 ${currentPath === '/vocabulary' ? 'font-bold bg-blue-700' : ''}`}
-            >
-              单词学习
-            </a>
-            <a 
               href="/tags" 
               class={`block py-2 px-4 rounded-md hover:bg-blue-700 ${currentPath === '/tags' ? 'font-bold bg-blue-700' : ''}`}
             >
@@ -207,7 +195,6 @@ const currentPath = Astro.url.pathname;
             <a href="/about" class="hover:text-blue-300">关于</a>
             <a href="/blog" class="hover:text-blue-300">博客</a>
             <a href="/notes" class="hover:text-blue-300">笔记</a>
-            <a href="/vocabulary" class="hover:text-blue-300">单词</a>
             <button id="exit-dev-mode" class="hover:text-blue-300 hidden">退出开发者模式</button>
           </div>
         </div>

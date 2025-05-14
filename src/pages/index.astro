@@ -4,8 +4,8 @@ import Layout from '../layouts/Layout.astro';
 import PostCard from '../components/PostCard.astro';
 import AuthorCard from '../components/AuthorCard.astro';
 
-// 设置为预渲染模式
-export const prerender = true;
+// 设置为服务器渲染模式
+export const prerender = false;
 
 // 定义条目类型
 type BlogEntry = CollectionEntry<'blog'>;
@@ -196,14 +196,6 @@ function formatDate(date: Date): string {
                   <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                 </svg>
                 学习笔记
-              </a>
-            </li>
-            <li>
-              <a href="/vocabulary" class="flex items-center hover:translate-x-1 transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M10.394 2.08a1 1 0 00-.788 0l-7 4A1 1 0 002 7v6a1 1 0 001 1h14a1 1 0 001-1V7a1 1 0 00-.606-.92l-7-4zM10 12.586L3.707 9.293l1.586-1.586L10 10.414l4.707-2.707 1.586 1.586L10 12.586z"/>
-                </svg>
-                英语单词
               </a>
             </li>
           </ul>

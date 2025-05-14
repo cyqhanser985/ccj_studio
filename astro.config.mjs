@@ -5,7 +5,7 @@ import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
 import { rehypeHeadingIds } from '@astrojs/markdown-remark';
 import rehypePrettyCode from 'rehype-pretty-code';
-import searchIndexIntegration from './src/integrations/search-index.ts';
+import searchIndexIntegration from './src/integrations/search-index.js';
 import netlify from '@astrojs/netlify';
 
 // 定义节点类型以避免隐式any错误
@@ -66,7 +66,7 @@ const katexOptions = {
 
 // https://astro.build/config
 export default defineConfig({
-  output: 'server',  // 使用'server'渲染模式，当前版本不支持'hybrid'
+  output: 'server',  // 回退到'server'渲染模式，当前版本不支持'hybrid'
   adapter: netlify({
     edgeMiddleware: true,  // 启用Edge中间件以获得更好性能
   }),  
