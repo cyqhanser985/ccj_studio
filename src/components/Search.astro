@@ -1,4 +1,5 @@
 ---
+// 声明这个组件需要客户端交互
 ---
 <div class="search-container relative">
   <div class="search-input-wrapper flex items-center relative">
@@ -24,19 +25,29 @@
 
 <script>
   // 暂存所有内容数据的变量
-  let allContent: any[] = [];
+  let allContent = [];
   
   // 导入 Fuse.js
-  import Fuse from 'fuse.js';
+  import * as FuseModule from 'fuse.js';
+  
+  // 定义搜索数据项的接口
+  interface SearchItem {
+    title: string;
+    description?: string;
+    content?: string;
+    category?: string;
+    tags?: string[];
+    url: string;
+  }
   
   // 初始化 Fuse 实例
-  let fuse: Fuse<any> | null = null;
+  let fuse: FuseModule.default<SearchItem> | null = null;
   
   // 获取DOM元素
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-  const searchResults = document.getElementById('search-results') as HTMLDivElement | null;
+  const searchResults = document.getElementById('search-results') as HTMLElement | null;
   const resultsList = document.getElementById('results-list') as HTMLUListElement | null;
-  const noResults = document.getElementById('no-results') as HTMLDivElement | null;
+  const noResults = document.getElementById('no-results') as HTMLElement | null;
   
   // 配置 Fuse.js 选项
   const fuseOptions = {
@@ -67,10 +78,10 @@
       
       // 确保数据有效性
       if (Array.isArray(data)) {
-        allContent = data;
+        allContent = data as SearchItem[];
         
         // 初始化 Fuse 实例
-        fuse = new Fuse(allContent, fuseOptions);
+        fuse = new FuseModule.default(allContent, fuseOptions);
         console.log('搜索数据加载成功:', allContent.length, '条记录');
       } else {
         console.error('搜索数据格式无效:', data);
@@ -107,11 +118,11 @@
     }
     
     const results = fuse.search(query);
-    displayResults(results);
+    displayResults(results as FuseModule.FuseResult<SearchItem>[]);
   }
   
   // 显示搜索结果
-  function displayResults(results: Array<{item: any, refIndex: number, score?: number}>) {
+  function displayResults(results: FuseModule.FuseResult<SearchItem>[]) {
     if (!resultsList || !noResults || !searchResults) return;
     
     // 清空之前的结果
@@ -149,45 +160,48 @@
     searchResults.classList.remove('hidden');
   }
   
-  // 初始化事件监听器
-  function initSearchEvents() {
-    if (!searchInput || !searchResults) return;
-    
-    // 监听输入事件
-    searchInput.addEventListener('input', (e) => {
-      const target = e.target as HTMLInputElement;
-      const query = target.value.trim();
-      performSearch(query);
+  // 事件监听器
+  const inputElement = document.getElementById('search-input') as HTMLInputElement | null;
+  if (inputElement) {
+    inputElement.addEventListener('input', (event) => {
+      const target = event.target as HTMLInputElement;
+      performSearch(target.value);
     });
-    
-    // 监听点击事件（点击外部区域关闭搜索结果）
-    document.addEventListener('click', (e) => {
-      if (searchResults && !searchResults.contains(e.target as Node) && e.target !== searchInput) {
-        searchResults.classList.add('hidden');
-      }
+
+    inputElement.addEventListener('focus', () => {
+      performSearch(inputElement.value);
     });
-    
-    // 监听聚焦事件
+  }
+  
+  document.addEventListener('click', (event) => {
+    if (searchResults && inputElement && !searchResults.contains(event.target as Node) && event.target !== inputElement) {
+      searchResults.classList.add('hidden');
+    }
+  });
+  
+  // 当 searchInput 获得焦点时，如果输入框内有内容，则执行搜索
+  if (searchInput) {
     searchInput.addEventListener('focus', () => {
-      const query = searchInput.value.trim();
-      if (query && query.length >= 2) {
-        performSearch(query);
-      }
-    });
-    
-    // 监听键盘事件（如ESC键关闭搜索结果）
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && searchResults) {
-        searchResults.classList.add('hidden');
+      if (searchInput.value.length >= 2) {
+        performSearch(searchInput.value);
       }
     });
   }
   
-  // 当页面加载完成后执行
+  // 页面加载时加载数据
   document.addEventListener('DOMContentLoaded', async () => {
     await loadContentData();
     initSearchEvents();
   });
+
+  // 事件初始化函数
+  function initSearchEvents() {
+    document.querySelectorAll('.search-trigger').forEach(trigger => {
+      trigger.addEventListener('click', () => {
+        document.getElementById('search-input')?.focus();
+      });
+    });
+  }
 </script>
 
 <style>

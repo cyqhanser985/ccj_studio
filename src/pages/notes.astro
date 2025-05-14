@@ -2,8 +2,8 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
 
-// 设置为服务器渲染模式
-export const prerender = false;
+// 设置为预渲染模式
+export const prerender = true;
 
 // 定义笔记条目类型
 type NotesEntry = CollectionEntry<'notes'>;

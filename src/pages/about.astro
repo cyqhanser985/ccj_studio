@@ -1,5 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
+
+// 设置为预渲染模式
+export const prerender = true;
 ---
 
 <Layout title="关于 - 林大反卷门驻地">
@@ -30,7 +33,7 @@ import Layout from '../layouts/Layout.astro';
       <div class="prose prose-lg max-w-none dark:prose-invert">
         <h2 class="font-bold text-2xl border-b pb-2 border-gray-200 dark:border-gray-700">关于本站</h2>
         <p>
-          欢迎来到“林大反卷门驻地”！这是一个由站长（我）独立开发和维护的个人博客与学习笔记分享平台。创建本站的初衷是：
+          欢迎来到"林大反卷门驻地"！这是一个由站长（我）独立开发和维护的个人博客与学习笔记分享平台。创建本站的初衷是：
         </p>
         <ul>
           <li><strong>知识沉淀与分享</strong>：记录和梳理个人在技术学习、学术研究以及生活感悟中的所得，并乐于分享给每一位到访的朋友。</li>
@@ -104,7 +107,7 @@ import Layout from '../layouts/Layout.astro';
         
         <div class="mt-10 p-6 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-center">
           <p class="text-gray-700 dark:text-gray-300">
-            感谢您访问“林大反卷门驻地”。希望这里的内容能为您带来价值。如果您有任何建议或想交流的话题，欢迎随时联系我！
+            感谢您访问"林大反卷门驻地"。希望这里的内容能为您带来价值。如果您有任何建议或想交流的话题，欢迎随时联系我！
           </p>
         </div>
       </div>

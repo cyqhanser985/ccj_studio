@@ -1,0 +1,44 @@
+# 林大反卷门驻地 Netlify 配置
+
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[build.environment]
+  NETLIFY_NEXT_PLUGIN_SKIP = "true"
+
+# 启用缓存优化
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+[build.processing.images]
+  compress = true
+
+# 启用边缘函数配置
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# 缓存控制
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800" 

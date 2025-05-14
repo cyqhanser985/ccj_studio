@@ -66,8 +66,10 @@ const katexOptions = {
 
 // https://astro.build/config
 export default defineConfig({
-  output: 'server',  // 设置为服务器模式以支持API路由
-  adapter: netlify(),  // 添加Netlify适配器
+  output: 'server',  // 使用'server'渲染模式，当前版本不支持'hybrid'
+  adapter: netlify({
+    edgeMiddleware: true,  // 启用Edge中间件以获得更好性能
+  }),  
   integrations: [
     tailwind(),
     searchIndexIntegration()

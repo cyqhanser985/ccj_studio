@@ -28,7 +28,7 @@ const currentPath = Astro.url.pathname;
           <div class="flex items-center">
             <!-- 搜索组件 -->
             <div class="mr-4 w-full md:w-64 lg:w-80">
-              <Search />
+              <Search client:idle />
             </div>
             
             <!-- 桌面端导航 -->
@@ -219,7 +219,7 @@ const currentPath = Astro.url.pathname;
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
         onload="renderMathInElement(document.body);"></script>
 
-    <!-- 暗黑模式切换脚本 -->
+    <!-- 暗黑模式切换脚本 - 立即加载，对用户体验影响大 -->
     <script>
       // 检查本地存储中的主题偏好
       const themeToggleBtn = document.getElementById('theme-toggle');
@@ -244,7 +244,10 @@ const currentPath = Astro.url.pathname;
           localStorage.setItem('theme', 'dark');
         }
       });
-      
+    </script>
+    
+    <!-- 移动端菜单切换 - 立即加载，对移动用户体验影响大 -->
+    <script>
       // 移动端菜单切换
       const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
       const mobileMenu = document.getElementById('mobile-menu');
@@ -254,11 +257,14 @@ const currentPath = Astro.url.pathname;
           mobileMenu.classList.toggle('hidden');
         });
       }
-      
+    </script>
+    
+    <!-- 开发者模式逻辑 - 延迟加载，对核心功能不重要 -->
+    <script defer>
       // 开发者模式逻辑
       const devPassword = "Cyq20060804";
       const devModal = document.getElementById('dev-modal');
-      const devPasswordInput = document.getElementById('dev-password') as HTMLInputElement;
+      const devPasswordInput = document.getElementById('dev-password');
       const verifyDevPasswordBtn = document.getElementById('verify-dev-password');
       const closeDevModalBtn = document.getElementById('close-dev-modal');
       const devMenuItems = document.getElementById('dev-menu-items');
@@ -362,11 +368,14 @@ const currentPath = Astro.url.pathname;
           }
         });
       }
+    </script>
       
+    <!-- 下拉菜单改进 - 仅在视图可见时加载 -->
+    <script defer>
       // 下拉菜单改进
       const contentDropdownParent = document.querySelector('.relative.group');
       const contentDropdown = document.getElementById('content-dropdown');
-      let dropdownTimeout: NodeJS.Timeout | number | undefined;
+      let dropdownTimeout;
       
       if (contentDropdownParent && contentDropdown) {
         // 鼠标进入父元素时显示下拉菜单

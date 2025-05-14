@@ -2,9 +2,6 @@
 import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 
-// 默认管理员密码
-const ADMIN_PASSWORD = "Cyq20060804";
-
 // 获取所有文章（用于统计）
 const blogEntries = await getCollection('blog');
 const notesEntries = await getCollection('notes');
@@ -125,63 +122,93 @@ const notesEntries = await getCollection('notes');
   </div>
 </Layout>
 
-<script>
+<script defer>
   // 定义作者信息类型
-  interface AuthorInfo {
-    name: string;
-    bio: string;
-    email: string;
-    github?: string;
-    twitter?: string;
-  }
+  // interface AuthorInfo {
+  //   name: string;
+  //   bio: string;
+  //   email: string;
+  //   github?: string;
+  //   twitter?: string;
+  // }
   
   // 存储键
   const AUTHOR_KEY = 'author_info';
-  const VOCAB_KEY = 'vocabulary_words';
+  const ADMIN_PASSWORD = 'Cyq20060804'; // 实际使用中应该使用更安全的方式存储
   
   // 表单元素
-  const loginPanel = document.getElementById('login-panel') as HTMLDivElement;
-  const adminPanel = document.getElementById('admin-panel') as HTMLDivElement;
-  const loginBtn = document.getElementById('login-btn') as HTMLButtonElement;
-  const passwordInput = document.getElementById('password') as HTMLInputElement;
-  const authorForm = document.getElementById('author-form') as HTMLFormElement;
-  const avatarForm = document.getElementById('avatar-form') as HTMLFormElement;
-  const avatarUpload = document.getElementById('avatar-upload') as HTMLInputElement;
-  const avatarPreview = document.getElementById('avatar-preview') as HTMLImageElement;
-  const vocabularyCount = document.getElementById('vocabulary-count') as HTMLDivElement;
+  const loginPanel = document.getElementById('login-panel');
+  const adminPanel = document.getElementById('admin-panel');
+  const loginBtn = document.getElementById('login-btn');
+  const passwordInput = document.getElementById('password');
+  const authorForm = document.getElementById('author-form');
+  const avatarForm = document.getElementById('avatar-form');
+  const avatarUpload = document.getElementById('avatar-upload');
+  const avatarPreview = document.getElementById('avatar-preview');
+  const vocabularyCount = document.getElementById('vocabulary-count');
   
   // 检查是否已登录
   let isLoggedIn = localStorage.getItem('admin_logged_in') === 'true';
   
-  // 初始化页面
+  // 初始化
   function init() {
+    // 根据登录状态显示不同面板
     if (isLoggedIn) {
       showAdminPanel();
+    } else {
+      showLoginPanel();
     }
     
-    setupEventListeners();
+    // 添加事件监听器
+    if (loginBtn) {
+      loginBtn.addEventListener('click', handleLogin);
+    }
+    
+    if (authorForm) {
+      authorForm.addEventListener('submit', saveAuthorInfo);
+    }
+    
+    if (avatarForm) {
+      avatarForm.addEventListener('submit', handleAvatarUpload);
+    }
+    
+    if (avatarUpload) {
+      avatarUpload.addEventListener('change', previewAvatar);
+    }
+    
+    // 载入作者信息
     loadAuthorInfo();
-    loadVocabularyCount();
+    loadStats();
   }
   
-  // 验证密码
-  function verifyPassword() {
-    const password = passwordInput.value;
-    
-    if (password === "Cyq20060804") {
-      isLoggedIn = true;
-      localStorage.setItem('admin_logged_in', 'true');
-      showAdminPanel();
-    } else {
-      alert("密码错误，请重试！");
-      passwordInput.value = '';
+  // 显示登录面板
+  function showLoginPanel() {
+    if (loginPanel && adminPanel) {
+      loginPanel.classList.remove('hidden');
+      adminPanel.classList.add('hidden');
     }
   }
   
   // 显示管理面板
   function showAdminPanel() {
-    loginPanel.classList.add('hidden');
-    adminPanel.classList.remove('hidden');
+    if (loginPanel && adminPanel) {
+      loginPanel.classList.add('hidden');
+      adminPanel.classList.remove('hidden');
+    }
+  }
+  
+  // 处理登录
+  function handleLogin(e) {
+    e.preventDefault();
+    
+    if (passwordInput && passwordInput.value === ADMIN_PASSWORD) {
+      isLoggedIn = true;
+      localStorage.setItem('admin_logged_in', 'true');
+      showAdminPanel();
+    } else {
+      alert('密码错误，请重试！');
+      if (passwordInput) passwordInput.value = '';
+    }
   }
   
   // 加载作者信息
@@ -189,14 +216,14 @@ const notesEntries = await getCollection('notes');
     try {
       const storedInfo = localStorage.getItem(AUTHOR_KEY);
       if (storedInfo) {
-        const authorInfo: AuthorInfo = JSON.parse(storedInfo);
+        const authorInfo = JSON.parse(storedInfo);
         
         // 填充表单
-        (document.getElementById('author-name') as HTMLInputElement).value = authorInfo.name || '';
-        (document.getElementById('author-bio') as HTMLTextAreaElement).value = authorInfo.bio || '';
-        (document.getElementById('author-email') as HTMLInputElement).value = authorInfo.email || '';
-        (document.getElementById('social-github') as HTMLInputElement).value = authorInfo.github || '';
-        (document.getElementById('social-twitter') as HTMLInputElement).value = authorInfo.twitter || '';
+        (document.getElementById('author-name')).value = authorInfo.name || '';
+        (document.getElementById('author-bio')).value = authorInfo.bio || '';
+        (document.getElementById('author-email')).value = authorInfo.email || '';
+        (document.getElementById('social-github')).value = authorInfo.github || '';
+        (document.getElementById('social-twitter')).value = authorInfo.twitter || '';
       }
     } catch (error) {
       console.error('加载作者信息失败:', error);
@@ -204,34 +231,40 @@ const notesEntries = await getCollection('notes');
   }
   
   // 保存作者信息
-  function saveAuthorInfo(e: Event) {
+  function saveAuthorInfo(e) {
     e.preventDefault();
     
     try {
       const formData = new FormData(authorForm);
-      const authorInfo: AuthorInfo = {
-        name: formData.get('name') as string || '',
-        bio: formData.get('bio') as string || '',
-        email: formData.get('email') as string || '',
-        github: formData.get('github') as string || '',
-        twitter: formData.get('twitter') as string || ''
+      const authorInfo = {
+        name: formData.get('name') || '',
+        bio: formData.get('bio') || '',
+        email: formData.get('email') || '',
+        github: formData.get('github') || '',
+        twitter: formData.get('twitter') || ''
       };
       
       // 保存到本地存储
       localStorage.setItem(AUTHOR_KEY, JSON.stringify(authorInfo));
       
-      // 保存到JSON文件
-      saveAuthorToFile(authorInfo);
+      // 同时保存到文件（如果可能）
+      saveAuthorToFile(authorInfo)
+        .then(() => {
+          alert('作者信息已成功保存！');
+        })
+        .catch(error => {
+          console.error('保存作者信息到文件失败:', error);
+          alert('作者信息已保存到本地存储，但保存到文件失败，可能需要联系管理员。');
+        });
       
-      alert('作者信息保存成功！');
     } catch (error) {
       console.error('保存作者信息失败:', error);
-      alert(`保存作者信息失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      alert('保存作者信息失败，请重试。');
     }
   }
   
   // 保存作者信息到文件
-  async function saveAuthorToFile(authorInfo: AuthorInfo) {
+  async function saveAuthorToFile(authorInfo) {
     try {
       const response = await fetch('/api/save-author', {
         method: 'POST',
@@ -242,46 +275,64 @@ const notesEntries = await getCollection('notes');
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      return await response.json();
     } catch (error) {
-      console.error('保存作者信息到文件失败:', error);
+      console.error('保存作者信息到文件API调用失败:', error);
       throw error;
     }
   }
   
   // 处理头像上传
-  function handleAvatarUpload(e: Event) {
+  function handleAvatarUpload(e) {
     e.preventDefault();
     
     if (!avatarUpload.files || avatarUpload.files.length === 0) {
-      alert('请选择要上传的图片');
+      alert('请先选择一个图片文件');
       return;
     }
     
     const file = avatarUpload.files[0];
-    
-    // 验证文件类型
-    if (!file.type.match('image.*')) {
-      alert('请选择图片文件');
+    if (!file.type.startsWith('image/')) {
+      alert('请选择一个图片文件');
       return;
     }
     
-    // 显示预览
+    // 上传头像
+    uploadAvatar(file)
+      .then(() => {
+        alert('头像上传成功！');
+      })
+      .catch(error => {
+        console.error('上传头像失败:', error);
+        alert('上传头像失败，请重试。');
+      });
+  }
+  
+  // 预览头像
+  function previewAvatar() {
+    if (!avatarUpload.files || avatarUpload.files.length === 0 || !avatarPreview) {
+      return;
+    }
+    
+    const file = avatarUpload.files[0];
+    if (!file.type.startsWith('image/')) {
+      return;
+    }
+    
     const reader = new FileReader();
     reader.onload = function(e) {
       if (e.target && e.target.result) {
-        avatarPreview.src = e.target.result as string;
+        avatarPreview.src = e.target.result;
       }
     };
     reader.readAsDataURL(file);
-    
-    // 上传文件
-    uploadAvatar(file);
   }
   
   // 上传头像到服务器
-  async function uploadAvatar(file: File) {
+  async function uploadAvatar(file) {
     try {
       const formData = new FormData();
       formData.append('avatar', file);
@@ -292,56 +343,27 @@ const notesEntries = await getCollection('notes');
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const data = await response.json();
-      alert('头像上传成功！');
-      
-      // 刷新缓存，确保显示新头像
-      avatarPreview.src = `${data.url}?t=${new Date().getTime()}`;
+      return await response.json();
     } catch (error) {
-      console.error('上传头像失败:', error);
-      alert(`上传头像失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      console.error('上传头像API调用失败:', error);
+      throw error;
     }
   }
   
-  // 加载单词数量
-  function loadVocabularyCount() {
+  // 加载统计信息
+  function loadStats() {
+    // 获取单词数量
     try {
-      const storedWords = localStorage.getItem(VOCAB_KEY);
-      const words = storedWords ? JSON.parse(storedWords) : [];
-      vocabularyCount.textContent = words.length.toString();
+      const vocabularyData = localStorage.getItem('vocabulary_words');
+      if (vocabularyData && vocabularyCount) {
+        const words = JSON.parse(vocabularyData);
+        vocabularyCount.textContent = words.length.toString();
+      }
     } catch (error) {
-      console.error('加载单词数量失败:', error);
-      vocabularyCount.textContent = '0';
-    }
-  }
-  
-  // 设置事件监听器
-  function setupEventListeners() {
-    // 登录
-    if (loginBtn) {
-      loginBtn.addEventListener('click', verifyPassword);
-    }
-    
-    if (passwordInput) {
-      passwordInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          verifyPassword();
-        }
-      });
-    }
-    
-    // 作者信息表单
-    if (authorForm) {
-      authorForm.addEventListener('submit', saveAuthorInfo);
-    }
-    
-    // 头像上传
-    if (avatarForm) {
-      avatarForm.addEventListener('submit', handleAvatarUpload);
+      console.error('加载统计失败:', error);
     }
   }
   

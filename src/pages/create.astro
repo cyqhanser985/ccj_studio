@@ -116,11 +116,11 @@ const tags = [...new Set(allEntries
   </div>
 </Layout>
 
-<script>
+<script defer>
   // 显示调试日志
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const debugPanel = document.getElementById('debug-panel') as HTMLDivElement;
-  const debugLog = document.getElementById('debug-log') as HTMLPreElement;
+  const debugPanel = document.getElementById('debug-panel');
+  const debugLog = document.getElementById('debug-log');
   
   // 仅在localhost下显示调试面板
   if (isLocalhost) {
@@ -131,7 +131,7 @@ const tags = [...new Set(allEntries
     const originalConsoleError = console.error;
     const originalConsoleWarn = console.warn;
     
-    const logToDebugPanel = (type: string, ...args: any[]) => {
+    const logToDebugPanel = (type, ...args) => {
       try {
         const timestamp = new Date().toLocaleTimeString();
         const formattedArgs = args.map(arg => {
@@ -174,16 +174,16 @@ const tags = [...new Set(allEntries
   }
 
   // 标签管理
-  const tagInput = document.getElementById('tag-input') as HTMLInputElement;
-  const addTagButton = document.getElementById('add-tag') as HTMLButtonElement;
-  const tagsContainer = document.getElementById('tags-container') as HTMLDivElement;
-  const tagsInput = document.getElementById('tags') as HTMLInputElement;
+  const tagInput = document.getElementById('tag-input');
+  const addTagButton = document.getElementById('add-tag');
+  const tagsContainer = document.getElementById('tags-container');
+  const tagsInput = document.getElementById('tags');
   
   // 存储当前标签
-  let currentTags: string[] = [];
+  let currentTags = [];
   
   // 添加标签函数
-  function addTag(tag: string) {
+  function addTag(tag) {
     if (!tag || currentTags.includes(tag)) return;
     
     currentTags.push(tag);
@@ -246,18 +246,18 @@ const tags = [...new Set(allEntries
   });
   
   // 表单提交
-  const form = document.getElementById('create-form') as HTMLFormElement;
+  const form = document.getElementById('create-form');
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     // 获取表单数据
     const formData = new FormData(form);
-    const contentType = formData.get('content-type') as string;
-    const title = formData.get('title') as string;
-    const filename = formData.get('filename') as string || '';
-    const description = formData.get('description') as string || '';
-    const category = formData.get('category') as string || '';
-    const content = formData.get('content') as string;
+    const contentType = formData.get('content-type') || '';
+    const title = formData.get('title') || '';
+    const filename = formData.get('filename') || '';
+    const description = formData.get('description') || '';
+    const category = formData.get('category') || '';
+    const content = formData.get('content') || '';
     const date = new Date().toISOString();
     
     // 创建文件名（使用用户输入的文件名或根据标题生成）
@@ -335,21 +335,21 @@ ${content}`;
       } else {
         throw new Error(responseData.message || '创建内容失败');
       }
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('创建内容过程中出现错误:', error);
       alert(`创建内容失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   });
   
   // 预览功能
-  const previewBtn = document.getElementById('preview-btn') as HTMLButtonElement;
-  const previewModal = document.getElementById('preview-modal') as HTMLDivElement;
-  const closePreview = document.getElementById('close-preview') as HTMLButtonElement;
-  const previewContent = document.getElementById('preview-content') as HTMLDivElement;
+  const previewBtn = document.getElementById('preview-btn');
+  const previewModal = document.getElementById('preview-modal');
+  const closePreview = document.getElementById('close-preview');
+  const previewContent = document.getElementById('preview-content');
   
   previewBtn.addEventListener('click', async () => {
-    const content = (document.getElementById('content') as HTMLTextAreaElement).value;
-    const title = (document.getElementById('title') as HTMLInputElement).value;
+    const content = (document.getElementById('content')).value;
+    const title = (document.getElementById('title')).value;
     
     // 简单的预览，在实际应用中可以使用更复杂的Markdown解析
     previewContent.innerHTML = `<h1>${title}</h1>\n${content}`;
