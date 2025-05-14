@@ -1,7 +1,6 @@
-import { words, filteredWords, currentFilter, searchTerm, currentPage, pageSize, useDictionary as globalUseDictionary } from './state.js';
-import { saveWords, queryDictionary, getUniqueCategories } from './utils.js';
+import { words, filteredWords, currentFilter, searchTerm, currentPage, pageSize } from './state.js';
+import { saveWords, queryDictionary } from './utils.js';
 import { updateWordsDisplay, renderCategoryFilters, updateCategoryFilterUI } from './ui.js';
-import { addWordForm as globalAddWordForm, meaningTextarea as globalMeaningTextarea, wordInput as globalWordInput } from './domElements.js';
 
 // 添加新单词
 export function addWord(newWordData) {
@@ -31,13 +30,6 @@ export function deleteWord(id) {
 
 // 应用过滤器
 export function applyFilters(filterCategory, currentSearchTerm) {
-  // Update state for filter and search term
-  // This is a simplified way; ideally, state.js would have setters
-  // For now, we assume state.js 'let' exports are directly modifiable if this module is careful
-  // However, direct modification of imported primitives is not standard. 
-  // It's better if state.js exports objects or functions to modify state.
-  // For this refactor, we'll update local copies and rely on them being passed around or re-imported where needed.
-  
   let result = [...words]; // Start with all words
 
   // Filter by search term
@@ -58,23 +50,30 @@ export function applyFilters(filterCategory, currentSearchTerm) {
   filteredWords.length = 0; // Clear array
   result.forEach(item => filteredWords.push(item));
   
-  //currentPage = 1; // Reset to first page after filtering - state.js should handle this ideally
-  // For now, let's assume the caller of applyFilters or updateWordsDisplay handles currentPage reset.
+  // 使用window全局状态而不是直接修改导入的变量
+  if (window.vocabularyState) {
+    window.vocabularyState.currentFilter = filterCategory;
+    window.vocabularyState.searchTerm = currentSearchTerm;
+    window.vocabularyState.currentPage = 1; // 重置为第一页
+  }
+  
   updateWordsDisplay();
   updateCategoryFilterUI(filterCategory); // Ensure button styles are correct
 }
 
-
 export function handleAddWordFormSubmit(event) {
     event.preventDefault();
-    const formData = new FormData(globalAddWordForm);
+    const form = event.target;
+    if (!form) return;
+    
+    const formData = new FormData(form);
     const newWordData = {
-        word: formData.get('word')?.toString().trim() || '',
-        pronunciation: formData.get('pronunciation')?.toString().trim() || '',
-        meaning: formData.get('meaning')?.toString().trim() || '',
-        example: formData.get('example')?.toString().trim() || '',
-        category: formData.get('category')?.toString().trim() || '',
-        difficulty: formData.get('difficulty')?.toString() || 'medium',
+        word: formData.get('word') ? formData.get('word').toString().trim() : '',
+        pronunciation: formData.get('pronunciation') ? formData.get('pronunciation').toString().trim() : '',
+        meaning: formData.get('meaning') ? formData.get('meaning').toString().trim() : '',
+        example: formData.get('example') ? formData.get('example').toString().trim() : '',
+        category: formData.get('category') ? formData.get('category').toString().trim() : '',
+        difficulty: formData.get('difficulty') ? formData.get('difficulty').toString() : 'medium',
     };
 
     if (!newWordData.word || !newWordData.meaning) {
@@ -82,59 +81,63 @@ export function handleAddWordFormSubmit(event) {
         return;
     }
     addWord(newWordData);
-    if (globalAddWordForm) {
-        globalAddWordForm.reset();
-    }
+    form.reset();
 }
 
 export function handleUseDictionaryChange(event) {
     const checkbox = event.target;
-    // globalUseDictionary = checkbox.checked; // This direct assignment to imported primitive won't work as expected.
-    // State should be managed via functions or an object in state.js
-    // For now, let's assume a local variable or pass the state around.
-    const useDict = checkbox.checked;
-    if (useDict && globalWordInput && globalWordInput.value.trim()) {
-        queryDictionary(globalWordInput.value.trim());
+    if (!checkbox) return;
+    
+    if (window.vocabularyState) {
+        window.vocabularyState.useDictionary = checkbox.checked;
+    }
+    
+    if (checkbox.checked) {
+        const wordInput = document.getElementById('word');
+        if (wordInput && wordInput.value.trim()) {
+            queryDictionary(wordInput.value.trim());
+        }
     }
 }
 
 export function handleWordInputBlur(event) {
-    // Similar to handleUseDictionaryChange, direct modification of globalUseDictionary is problematic.
-    // We need a reliable way to get the current state of useDictionary.
-    // For now, let's assume we can access it or it's passed.
-    // This requires useDictionary to be correctly managed and accessible.
+    if (!event.target) return;
+    
     const wordValue = event.target.value.trim();
-    // if (globalUseDictionary && wordValue) { // Check the actual state of useDictionary
-    // queryDictionary(wordValue);
-    // }
-    // Placeholder: to make this work, `useDictionary` state needs proper management.
-    // For now, this function might not behave as intended without correct state access.
-    const useDictionaryCheckbox = document.getElementById('use-dictionary'); // Re-fetch or ensure it's available
-    if (useDictionaryCheckbox && useDictionaryCheckbox.checked && wordValue) {
+    if (!wordValue) return;
+    
+    const useDictionary = window.vocabularyState?.useDictionary || 
+                         document.getElementById('use-dictionary')?.checked;
+                         
+    if (useDictionary) {
         queryDictionary(wordValue);
     }
 }
 
 export function handleSearchInput(event) {
+    if (!event.target) return;
+    
     const newSearchTerm = event.target.value;
-    // searchTerm = newSearchTerm; // Again, direct state modification issue.
-    // applyFilters should take the new search term.
-    applyFilters(currentFilter, newSearchTerm); // Pass current filter and new search term
+    applyFilters(window.vocabularyState?.currentFilter || currentFilter, newSearchTerm);
 }
 
 export function handlePrevPage() {
-    if (currentPage > 1) {
-        // currentPage--; // State modification issue
-        // A state management function should handle this: e.g., state.setCurrentPage(currentPage - 1)
-        // For now, this will be handled in main.js or where event listeners are set up.
-        // updateWordsDisplay();
+    const currentPageValue = window.vocabularyState?.currentPage || currentPage;
+    if (currentPageValue > 1) {
+        if (window.vocabularyState) {
+            window.vocabularyState.currentPage = currentPageValue - 1;
+        }
+        updateWordsDisplay();
     }
 }
 
 export function handleNextPage() {
+    const currentPageValue = window.vocabularyState?.currentPage || currentPage;
     const totalPages = Math.ceil(filteredWords.length / pageSize);
-    if (currentPage < totalPages) {
-        // currentPage++; // State modification issue
-        // updateWordsDisplay();
+    if (currentPageValue < totalPages) {
+        if (window.vocabularyState) {
+            window.vocabularyState.currentPage = currentPageValue + 1;
+        }
+        updateWordsDisplay();
     }
 }

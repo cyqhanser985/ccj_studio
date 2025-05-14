@@ -7,7 +7,9 @@ import {
   handleAddWordFormSubmit,
   handleUseDictionaryChange,
   handleWordInputBlur,
-  handleSearchInput
+  handleSearchInput,
+  handlePrevPage,
+  handleNextPage
 } from './actions.js';
 import {
   startLearningMode,
@@ -62,52 +64,50 @@ function setUseDictionary(value) {
     window.vocabularyState.useDictionary = value;
 }
 
+// 初始化全局状态
+if (!window.vocabularyState) {
+  window.vocabularyState = {
+    currentPage: 1,
+    searchTerm: '',
+    currentFilter: 'all',
+    useDictionary: false,
+    currentWordIndex: 0,
+    meaningVisible: false,
+    learningWords: []
+  };
+}
 
 // 初始化
 function init() {
-  // Initialize global state if not done elsewhere (e.g. learningMode.js)
-  if (!window.vocabularyState) {
-    window.vocabularyState = {
-        currentPage: 1,
-        searchTerm: '',
-        currentFilter: 'all',
-        useDictionary: false,
-        // from learningMode.js
-        currentWordIndex: 0,
-        meaningVisible: false
-    };
-  }
-
-  loadWords(); // Loads words into global state.words
-  applyFilters(window.vocabularyState.currentFilter, window.vocabularyState.searchTerm); // Initial filter application
+  loadWords(); // 加载单词到全局状态
+  applyFilters(window.vocabularyState.currentFilter, window.vocabularyState.searchTerm); // 初始化过滤器
   renderCategoryFilters();
   setupEventListeners();
-  updateWordsDisplay(); // Initial display
+  updateWordsDisplay(); // 初始化显示
 }
 
 // 设置事件监听器
 function setupEventListeners() {
+  // 添加单词表单
+  const addWordForm = document.getElementById('add-word-form');
   if (addWordForm) {
     addWordForm.addEventListener('submit', handleAddWordFormSubmit);
   }
 
+  // 使用词典复选框
+  const useDictionaryCheckbox = document.getElementById('use-dictionary');
   if (useDictionaryCheckbox) {
-    useDictionaryCheckbox.addEventListener('change', (e) => {
-        setUseDictionary(e.target.checked);
-        if (e.target.checked && wordInput && wordInput.value.trim()) {
-            queryDictionary(wordInput.value.trim());
-        }
-    });
+    useDictionaryCheckbox.addEventListener('change', handleUseDictionaryChange);
   }
 
+  // 单词输入框
+  const wordInput = document.getElementById('word');
   if (wordInput) {
-    wordInput.addEventListener('blur', (e) => {
-        if (window.vocabularyState.useDictionary && e.target.value.trim()) {
-            queryDictionary(e.target.value.trim());
-        }
-    });
+    wordInput.addEventListener('blur', handleWordInputBlur);
   }
 
+  // 导入JSON
+  const importJsonInput = document.getElementById('import-json');
   if (importJsonInput) {
     importJsonInput.addEventListener('change', function() {
       if (this.files && this.files.length > 0) {
@@ -117,6 +117,8 @@ function setupEventListeners() {
     });
   }
 
+  // 导入CSV
+  const importCsvInput = document.getElementById('import-csv');
   if (importCsvInput) {
     importCsvInput.addEventListener('change', function() {
       if (this.files && this.files.length > 0) {
@@ -126,15 +128,18 @@ function setupEventListeners() {
     });
   }
 
+  // 导出按钮
+  const exportJsonBtn = document.getElementById('export-json');
+  const exportCsvBtn = document.getElementById('export-csv');
   if (exportJsonBtn) {
-      exportJsonBtn.addEventListener('click', exportToJson);
+    exportJsonBtn.addEventListener('click', exportToJson);
   }
-
   if (exportCsvBtn) {
-      exportCsvBtn.addEventListener('click', exportToCsv);
+    exportCsvBtn.addEventListener('click', exportToCsv);
   }
 
-  //下载发音包按钮 (原始代码中有此按钮的事件监听，但功能是模拟的)
+  // 下载发音包按钮
+  const downloadPronunciationBtn = document.getElementById('download-pronunciation-pack');
   if (downloadPronunciationBtn) {
     downloadPronunciationBtn.addEventListener('click', function(e) {
       e.preventDefault();
@@ -143,40 +148,28 @@ function setupEventListeners() {
     });
   }
 
+  // 搜索输入框
+  const searchInput = document.getElementById('search-vocabulary');
   if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-        setSearchTerm(e.target.value);
-        applyFilters(window.vocabularyState.currentFilter, window.vocabularyState.searchTerm);
-    });
+    searchInput.addEventListener('input', handleSearchInput);
   }
 
+  // 分页按钮
+  const prevPageBtn = document.getElementById('prev-page');
+  const nextPageBtn = document.getElementById('next-page');
   if (prevPageBtn) {
-    prevPageBtn.addEventListener('click', () => {
-      if (window.vocabularyState.currentPage > 1) {
-        setCurrentPage(window.vocabularyState.currentPage - 1);
-        updateWordsDisplay();
-      }
-    });
+    prevPageBtn.addEventListener('click', handlePrevPage);
   }
-
   if (nextPageBtn) {
-    nextPageBtn.addEventListener('click', () => {
-      const totalPages = Math.ceil(filteredWords.length / pageSize);
-      if (window.vocabularyState.currentPage < totalPages) {
-        setCurrentPage(window.vocabularyState.currentPage + 1);
-        updateWordsDisplay();
-      }
-    });
+    nextPageBtn.addEventListener('click', handleNextPage);
   }
 
-  // Event listeners for category filter buttons (dynamic)
-  // These are now set up within renderCategoryFilters in ui.js, but need to call applyFilters correctly.
-  // We need to ensure that applyFilters in actions.js correctly updates the state and UI.
-  // The ui.js handleCategoryFilterClick needs to correctly call applyFilters from actions.js.
-  // Let's adjust ui.js to call actions.applyFilters with the new category.
-  // And actions.applyFilters needs to update state.currentFilter and then call ui.updateCategoryFilterUI.
-
-  // Learning Mode
+  // 学习模式按钮
+  const startLearningBtn = document.getElementById('start-learning');
+  const closeLearningBtn = document.getElementById('close-learning');
+  const showMeaningBtn = document.getElementById('show-meaning');
+  const nextWordBtn = document.getElementById('next-word');
+  
   if (startLearningBtn) {
     startLearningBtn.addEventListener('click', startLearningMode);
   }
@@ -190,14 +183,13 @@ function setupEventListeners() {
     nextWordBtn.addEventListener('click', nextWord);
   }
 
-  // Play audio button in learning mode (if it exists)
-  // The original script had a getElementById('play-audio') in setupEventListeners.
-  // Assuming playAudioBtn from domElements.js refers to this.
+  // 单词播放按钮
+  const playAudioBtn = document.getElementById('play-audio');
   if (playAudioBtn) {
     playAudioBtn.addEventListener('click', () => {
-      // currentWordEl is from domElements.js, refers to the word display in learning mode
-      if (learningWords.length > 0 && learningWords[window.vocabularyState.currentWordIndex]) {
-        playWordAudio(learningWords[window.vocabularyState.currentWordIndex].word);
+      const currentWord = window.vocabularyState.learningWords[window.vocabularyState.currentWordIndex];
+      if (currentWord) {
+        playWordAudio(currentWord.word);
       }
     });
   }
@@ -214,5 +206,5 @@ function setupEventListeners() {
   // And `renderCategoryFilters` should call this `handleCategoryFilterClick`.
 }
 
-// 初始化应用
+// 页面加载时初始化
 document.addEventListener('DOMContentLoaded', init);

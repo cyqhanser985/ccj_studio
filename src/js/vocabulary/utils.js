@@ -1,25 +1,25 @@
-import { STORAGE_KEY, words as globalWords, meaningTextarea as globalMeaningTextarea, wordInput as globalWordInput } from './wordClass.js'; // Assuming STORAGE_KEY is here, and state variables are managed elsewhere or passed as params
-import { words, filteredWords, currentFilter, searchTerm, currentPage, pageSize, meaningTextarea, exampleSectionEl, currentExampleEl, pronunciationInput as globalPronunciationInput } from './state.js'; // Assuming state variables are managed here
-import { updateTotalCount, updatePaginationButtons } from './ui.js'; // Assuming UI update functions are in ui.js
+import { STORAGE_KEY } from './wordClass.js'; 
+import { words, filteredWords, currentFilter, searchTerm, currentPage, pageSize } from './state.js';
+import { updateTotalCount, updatePaginationButtons } from './ui.js';
 
 // 从本地存储加载单词
 export function loadWords() {
   try {
     const storedWords = localStorage.getItem(STORAGE_KEY);
-    globalWords.length = 0; // Clear the array before loading
+    words.length = 0; // Clear the array before loading
     const parsedWords = storedWords ? JSON.parse(storedWords) : [];
-    parsedWords.forEach(word => globalWords.push(word));
+    parsedWords.forEach(word => words.push(word));
     // filteredWords should be updated after loading words, typically by calling applyFilters or similar
   } catch (error) {
     console.error('加载单词失败:', error);
-    globalWords.length = 0;
+    words.length = 0;
   }
 }
 
 // 保存单词到本地存储
 export function saveWords() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(globalWords));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
   } catch (error) {
     console.error('保存单词失败:', error);
     alert('保存单词失败，请检查浏览器存储空间');
@@ -28,7 +28,7 @@ export function saveWords() {
 
 // 获取所有唯一分类
 export function getUniqueCategories() {
-  const categories = globalWords
+  const categories = words
     .map(word => word.category)
     .filter((category) => 
       category !== undefined && category.trim() !== ''
@@ -74,18 +74,22 @@ export async function queryDictionary(word) {
           }
         }
       }
-      if (globalMeaningTextarea && meanings.length > 0) {
-        globalMeaningTextarea.value = meanings.slice(0, 3).join('\n');
+      
+      const meaningTextarea = document.getElementById('meaning');
+      if (meaningTextarea && meanings.length > 0) {
+        meaningTextarea.value = meanings.slice(0, 3).join('\n');
       }
-      const exampleTextarea = document.getElementById('example'); // domElements.js should export this
+      
+      const exampleTextarea = document.getElementById('example');
       if (exampleTextarea && examples.length > 0) {
         exampleTextarea.value = examples[0];
       }
+      
       if (data[0].phonetics && data[0].phonetics.length > 0) {
         const phoneticData = data[0].phonetics.find(p => p.text);
         const phonetic = phoneticData ? phoneticData.text : null;
         if (phonetic) {
-          const pronunciationInput = document.getElementById('pronunciation'); // domElements.js should export this
+          const pronunciationInput = document.getElementById('pronunciation');
           if (pronunciationInput) {
             pronunciationInput.value = phonetic;
           }

@@ -1,181 +1,192 @@
-import { words, learningWords, currentWordIndex, meaningVisible } from './state.js';
-import {
-  learningModeEl, vocabularyListEl, currentWordEl, currentPronunciationEl,
-  currentMeaningEl, currentExampleEl, meaningContainerEl, exampleSectionEl,
-  showMeaningBtn, progressTextEl, studyModeSelect, categoryFilterSelect, autoPlayCheckbox
-} from './domElements.js';
-import { playWordAudio, saveWords } from './utils.js';
+import { playWordAudio } from './utils.js';
+import { words } from './state.js';
 
-// 开始学习模式
-export function startLearningMode() {
-  if (!studyModeSelect || !categoryFilterSelect) return;
-
-  const studyMode = studyModeSelect.value;
-  const categoryFilter = categoryFilterSelect.value;
-
-  let tempLearningWords;
-  if (categoryFilter !== 'all') {
-    tempLearningWords = words.filter(word => word.category === categoryFilter);
-  } else {
-    tempLearningWords = [...words];
-  }
-
-  switch (studyMode) {
-    case 'new':
-      tempLearningWords.sort((a, b) => (parseInt(b.id) - parseInt(a.id)));
-      break;
-    case 'difficult':
-      tempLearningWords.sort((a, b) => {
-        if (b.difficulty === 'hard' && a.difficulty !== 'hard') return 1;
-        if (a.difficulty === 'hard' && b.difficulty !== 'hard') return -1;
-        if (b.difficulty === 'medium' && a.difficulty === 'easy') return 1;
-        if (a.difficulty === 'medium' && b.difficulty === 'easy') return -1;
-        return 0;
-      });
-      break;
-    case 'review':
-      tempLearningWords.sort((a, b) => {
-        const lastA = a.lastReviewed ? new Date(a.lastReviewed).getTime() : 0;
-        const lastB = b.lastReviewed ? new Date(b.lastReviewed).getTime() : 0;
-        return lastA - lastB;
-      });
-      break;
-    default:
-      tempLearningWords = tempLearningWords.sort(() => Math.random() - 0.5);
-  }
-
-  if (tempLearningWords.length === 0) {
-    alert('没有可学习的单词，请先添加一些单词');
-    return;
-  }
-  // Update global state
-  learningWords.length = 0;
-  tempLearningWords.forEach(w => learningWords.push(w));
-  
-  // currentWordIndex = 0; // state.js should handle this or provide a setter
-  // meaningVisible = false;
-  // For now, assume direct modification or these are handled by loadCurrentWord initial call
-  setState({ currentWordIndex: 0, meaningVisible: false });
-
-
-  if (vocabularyListEl && learningModeEl) {
-    vocabularyListEl.classList.add('hidden');
-    learningModeEl.classList.remove('hidden');
-  }
-  loadCurrentWord();
+// 初始化全局状态
+if (!window.vocabularyState) {
+  window.vocabularyState = {
+    currentWordIndex: 0,
+    meaningVisible: false,
+    learningWords: []
+  };
 }
 
-// 加载当前单词到学习界面
-export function loadCurrentWord() {
-  const word = learningWords[currentWordIndex];
-  if (!word) {
-    alert('学习完成！');
-    closeLearningMode();
+// DOM元素选择器
+function getElements() {
+  return {
+    learningModeEl: document.getElementById('learning-mode'),
+    vocabularyListEl: document.getElementById('vocabulary-list'),
+    startLearningBtn: document.getElementById('start-learning'),
+    closeLearningBtn: document.getElementById('close-learning'),
+    currentWordEl: document.getElementById('current-word'),
+    currentPronunciationEl: document.getElementById('current-pronunciation'),
+    currentMeaningEl: document.getElementById('current-meaning'),
+    currentExampleEl: document.getElementById('current-example'),
+    meaningContainerEl: document.getElementById('meaning-container'),
+    exampleSectionEl: document.getElementById('example-section'),
+    showMeaningBtn: document.getElementById('show-meaning'),
+    nextWordBtn: document.getElementById('next-word'),
+    progressTextEl: document.getElementById('progress-text'),
+    categoryFilterSelect: document.getElementById('category-filter'),
+    autoPlayCheckbox: document.getElementById('auto-play'),
+    studyModeSelect: document.getElementById('study-mode')
+  };
+}
+
+// 启动学习模式
+export function startLearningMode() {
+  const elements = getElements();
+  if (!elements.learningModeEl || !elements.vocabularyListEl) return;
+  
+  // 准备学习单词列表
+  const categoryFilter = elements.categoryFilterSelect ? elements.categoryFilterSelect.value : 'all';
+  
+  // 过滤单词
+  window.vocabularyState.learningWords = [...words];
+  
+  if (categoryFilter && categoryFilter !== 'all') {
+    window.vocabularyState.learningWords = window.vocabularyState.learningWords.filter(
+      word => word.category === categoryFilter
+    );
+  }
+
+  // 如果没有单词，显示提示
+  if (window.vocabularyState.learningWords.length === 0) {
+    alert('没有可学习的单词，请先添加一些单词！');
     return;
   }
 
-  if (progressTextEl) {
-    progressTextEl.textContent = `${currentWordIndex + 1}/${learningWords.length}`;
+  // 根据学习模式排序
+  const studyMode = elements.studyModeSelect ? elements.studyModeSelect.value : 'random';
+  
+  if (studyMode === 'random') {
+    // 随机排序
+    window.vocabularyState.learningWords = window.vocabularyState.learningWords.sort(() => Math.random() - 0.5);
+  } else if (studyMode === 'newest') {
+    // 假设最新添加的单词在数组前面，不需要额外排序
+  } else if (studyMode === 'oldest') {
+    // 假设最早添加的单词在数组后面，需要反转
+    window.vocabularyState.learningWords = window.vocabularyState.learningWords.reverse();
+  } else if (studyMode === 'difficulty-hard') {
+    // 按难度从高到低排序
+    window.vocabularyState.learningWords = window.vocabularyState.learningWords.sort((a, b) => {
+      const difficultyOrder = { hard: 3, medium: 2, easy: 1 };
+      return (difficultyOrder[b.difficulty] || 0) - (difficultyOrder[a.difficulty] || 0);
+    });
+  } else if (studyMode === 'difficulty-easy') {
+    // 按难度从低到高排序
+    window.vocabularyState.learningWords = window.vocabularyState.learningWords.sort((a, b) => {
+      const difficultyOrder = { hard: 3, medium: 2, easy: 1 };
+      return (difficultyOrder[a.difficulty] || 0) - (difficultyOrder[b.difficulty] || 0);
+    });
   }
-  if (currentWordEl) currentWordEl.textContent = word.word;
-  if (currentPronunciationEl) currentPronunciationEl.textContent = word.pronunciation || '';
-  if (currentMeaningEl) currentMeaningEl.textContent = word.meaning;
 
-  if (word.example && word.example.trim()) {
-    if (currentExampleEl) currentExampleEl.textContent = word.example;
-    if (exampleSectionEl) exampleSectionEl.classList.remove('hidden');
-  } else {
-    if (exampleSectionEl) exampleSectionEl.classList.add('hidden');
-  }
+  // 重置学习状态
+  window.vocabularyState.currentWordIndex = 0;
+  window.vocabularyState.meaningVisible = false;
 
-  // meaningVisible = false; // Handled by setState or direct state management
-  setState({ meaningVisible: false });
-  if (meaningContainerEl) meaningContainerEl.classList.add('opacity-0'); // Initial state, to be revealed
-  if (showMeaningBtn) showMeaningBtn.textContent = '显示释义';
+  // 显示学习界面
+  elements.vocabularyListEl.classList.add('hidden');
+  elements.learningModeEl.classList.remove('hidden');
 
-  word.lastReviewed = new Date().toISOString();
-  word.reviewCount = (word.reviewCount || 0) + 1;
-  saveWords(); // Save updated review info
-
-  if (autoPlayCheckbox && autoPlayCheckbox.checked) {
-    playWordAudio(word.word);
-  }
+  // 加载第一个单词
+  loadCurrentWord();
 }
 
 // 关闭学习模式
 export function closeLearningMode() {
-  if (learningModeEl) learningModeEl.classList.add('hidden');
-  if (vocabularyListEl) vocabularyListEl.classList.remove('hidden');
+  const elements = getElements();
+  if (!elements.learningModeEl || !elements.vocabularyListEl) return;
+  
+  elements.learningModeEl.classList.add('hidden');
+  elements.vocabularyListEl.classList.remove('hidden');
 }
 
-// 显示或隐藏单词释义
+// 切换单词释义显示
 export function toggleMeaning() {
-  // meaningVisible = !meaningVisible; // state management
-  const newMeaningVisible = !meaningVisible;
-  setState({ meaningVisible: newMeaningVisible });
+  window.vocabularyState.meaningVisible = !window.vocabularyState.meaningVisible;
+  updateMeaningVisibility();
+}
 
-  if (newMeaningVisible) {
-    if (meaningContainerEl) meaningContainerEl.classList.remove('opacity-0');
-    if (showMeaningBtn) showMeaningBtn.textContent = '隐藏释义';
+// 更新释义可见性
+function updateMeaningVisibility() {
+  const elements = getElements();
+  if (!elements.meaningContainerEl) return;
+  
+  if (window.vocabularyState.meaningVisible) {
+    elements.meaningContainerEl.classList.remove('opacity-0');
+    elements.meaningContainerEl.classList.add('opacity-100');
+    
+    if (elements.showMeaningBtn) {
+      elements.showMeaningBtn.textContent = '隐藏释义';
+    }
+    
+    // 检查是否有例句，如果有则显示
+    const currentWord = window.vocabularyState.learningWords[window.vocabularyState.currentWordIndex];
+    if (currentWord && currentWord.example && elements.exampleSectionEl) {
+      elements.exampleSectionEl.classList.remove('hidden');
+    }
   } else {
-    if (meaningContainerEl) meaningContainerEl.classList.add('opacity-0');
-    if (showMeaningBtn) showMeaningBtn.textContent = '显示释义';
+    elements.meaningContainerEl.classList.remove('opacity-100');
+    elements.meaningContainerEl.classList.add('opacity-0');
+    
+    if (elements.showMeaningBtn) {
+      elements.showMeaningBtn.textContent = '显示释义';
+    }
+    
+    // 隐藏例句
+    if (elements.exampleSectionEl) {
+      elements.exampleSectionEl.classList.add('hidden');
+    }
   }
 }
 
 // 下一个单词
 export function nextWord() {
-  // currentWordIndex++; // state management
-  const newCurrentWordIndex = currentWordIndex + 1;
+  if (!window.vocabularyState.learningWords.length) return;
   
-  if (newCurrentWordIndex >= learningWords.length) {
-    alert('恭喜，你已经学习完所有单词！');
-    closeLearningMode();
-    return;
+  window.vocabularyState.currentWordIndex++;
+  if (window.vocabularyState.currentWordIndex >= window.vocabularyState.learningWords.length) {
+    window.vocabularyState.currentWordIndex = 0;
   }
-  setState({ currentWordIndex: newCurrentWordIndex });
+  
+  window.vocabularyState.meaningVisible = false;
   loadCurrentWord();
 }
 
-// Helper to manage state changes for state.js 'let' exports
-// This is a workaround. A proper state management solution (e.g., object with methods in state.js) is better.
-function setState(newState) {
-    if (newState.hasOwnProperty('currentWordIndex')) {
-        // This direct assignment won't update the imported 'let' variable in other modules.
-        // currentWordIndex = newState.currentWordIndex; 
-        // Instead, functions needing currentWordIndex should import it and use its current value.
-        // For this to work, state.js might need to export an object that holds these values, 
-        // or provide setter functions.
-        // For now, we'll assume currentWordIndex in state.js is updated elsewhere or this is a conceptual update.
-        // A simple fix for this structure is to re-assign in state.js if possible, or pass state around.
-        // Let's assume state.js is modified to allow updates or this is a placeholder for such a mechanism.
-        // This is a critical point for refactoring state management.
-        // For the purpose of this split, we'll proceed with the understanding that state updates are tricky with 'let' exports.
-        
-        // A more robust way if state.js exports an object:
-        // import { state } from './state.js'; state.currentWordIndex = newState.currentWordIndex;
-        
-        // If state.js exports 'let currentWordIndex;' and a setter:
-        // import { setCurrentWordIndex } from './state.js'; setCurrentWordIndex(newState.currentWordIndex);
-        
-        // Given the current state.js, this is problematic. We'll assume currentWordIndex is mutated directly where used or passed.
-        // This function is more of a conceptual guide for what needs to happen to the state.
-    }
-    if (newState.hasOwnProperty('meaningVisible')) {
-        // meaningVisible = newState.meaningVisible;
-    }
-    // This function needs to correctly update the shared state in state.js
-    // For now, it's a placeholder for that logic.
-    Object.assign(window.vocabularyState, newState); // Example: using a global object for state
+// 加载当前单词
+export function loadCurrentWord() {
+  const elements = getElements();
+  if (!elements.currentWordEl) return;
+  
+  const currentWord = window.vocabularyState.learningWords[window.vocabularyState.currentWordIndex];
+  if (!currentWord) return;
+  
+  // 更新单词显示
+  elements.currentWordEl.textContent = currentWord.word;
+  
+  if (elements.currentPronunciationEl) {
+    elements.currentPronunciationEl.textContent = currentWord.pronunciation || '';
+  }
+  
+  if (elements.currentMeaningEl) {
+    elements.currentMeaningEl.textContent = currentWord.meaning || '';
+  }
+  
+  if (elements.currentExampleEl) {
+    elements.currentExampleEl.textContent = currentWord.example || '';
+  }
+  
+  if (elements.progressTextEl) {
+    elements.progressTextEl.textContent = `${window.vocabularyState.currentWordIndex + 1} / ${window.vocabularyState.learningWords.length}`;
+  }
+  
+  // 隐藏释义
+  window.vocabularyState.meaningVisible = false;
+  updateMeaningVisibility();
+  
+  // 自动发音
+  const autoPlay = elements.autoPlayCheckbox ? elements.autoPlayCheckbox.checked : false;
+  if (autoPlay) {
+    playWordAudio(currentWord.word);
+  }
 }
-
-// Initialize a global state object if not present (example of a simple state management)
-if (!window.vocabularyState) {
-    window.vocabularyState = {
-        currentWordIndex: 0,
-        meaningVisible: false
-    };
-}
-// Update local variables from global state (if this pattern is used)
-// currentWordIndex = window.vocabularyState.currentWordIndex;
-// meaningVisible = window.vocabularyState.meaningVisible;

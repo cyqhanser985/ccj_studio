@@ -31,9 +31,14 @@ export function handleJsonImport(file) {
       }
       if (validCount > 0) {
         saveWords();
-        // filteredWords = [...words]; // State update should be handled carefully
         filteredWords.length = 0;
         words.forEach(w => filteredWords.push(w));
+        
+        // 重置分页状态
+        if (window.vocabularyState) {
+          window.vocabularyState.currentPage = 1;
+        }
+        
         updateWordsDisplay();
         renderCategoryFilters();
         alert(`成功导入 ${validCount} 个单词`);
@@ -105,9 +110,14 @@ export function handleCsvImport(file) {
       }
       if (validCount > 0) {
         saveWords();
-        // filteredWords = [...words]; // State update
         filteredWords.length = 0;
         words.forEach(w => filteredWords.push(w));
+        
+        // 重置分页状态
+        if (window.vocabularyState) {
+          window.vocabularyState.currentPage = 1;
+        }
+        
         updateWordsDisplay();
         renderCategoryFilters();
         alert(`成功导入 ${validCount} 个单词`);

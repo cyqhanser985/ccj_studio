@@ -1,13 +1,12 @@
 import { getUniqueCategories } from './utils.js';
-import { words, filteredWords, currentFilter, searchTerm, currentPage, pageSize } from './state.js';
-import { vocabularyTableBody, totalCountEl, prevPageBtn, nextPageBtn } from './domElements.js';
-import { deleteWord } from './actions.js'; // Assuming deleteWord is in actions.js
-import { applyFilters } from './actions.js'; // Assuming applyFilters is in actions.js
+import { words, filteredWords, pageSize } from './state.js';
+import { deleteWord, applyFilters } from './actions.js';
 
 // 渲染分类筛选按钮
 export function renderCategoryFilters() {
   const categories = getUniqueCategories();
-  const categorySelect = document.getElementById('category-filter'); // Direct get, or import from domElements.js if added there
+  const categorySelect = document.getElementById('category-filter');
+  const currentFilter = window.vocabularyState?.currentFilter || 'all';
 
   if (categorySelect) {
     categorySelect.innerHTML = '<option value="all">所有分类</option>';
@@ -33,10 +32,6 @@ export function renderCategoryFilters() {
       button.textContent = category;
       filterContainer.appendChild(button);
       button.addEventListener('click', () => {
-        // currentFilter = category; // This state update should be handled by a state management function or directly in actions.js
-        // applyFilters();
-        // updateCategoryFilterUI();
-        // For now, let's assume applyFilters will handle state update and UI update call
         handleCategoryFilterClick(category);
       });
     });
@@ -44,9 +39,6 @@ export function renderCategoryFilters() {
     const allButton = filterContainer.querySelector('[data-category="all"]');
     if (allButton) {
       allButton.addEventListener('click', () => {
-        // currentFilter = 'all';
-        // applyFilters();
-        // updateCategoryFilterUI();
         handleCategoryFilterClick('all');
       });
     }
@@ -54,19 +46,8 @@ export function renderCategoryFilters() {
 }
 
 function handleCategoryFilterClick(category) {
-    // Update state (currentFilter should be imported from state.js and be mutable)
-    // This is a simplified approach. Ideally, state mutations go through dedicated functions.
-    // For now, directly modifying imported 'let' variables is problematic with ES modules.
-    // A better approach would be to have setter functions in state.js or use a more robust state management pattern.
-    // Let's assume applyFilters will correctly access and use the new category.
-    // And that applyFilters itself will call updateCategoryFilterUI.
-    
-    // Hacky way to update state for now, will need refactor if state.js exports are const
-    // import * as state from './state.js'; state.currentFilter = category;
-    // This won't work if currentFilter is a primitive exported with 'let'.
-    // Instead, applyFilters should take the new filter as an argument.
-    applyFilters(category, searchTerm); // Pass current search term as well
-    updateCategoryFilterUI(category); // Explicitly call UI update
+    const searchTerm = window.vocabularyState?.searchTerm || '';
+    applyFilters(category, searchTerm);
 }
 
 // 更新分类筛选UI
@@ -86,11 +67,16 @@ export function updateCategoryFilterUI(activeFilter) {
 
 // 更新单词显示
 export function updateWordsDisplay() {
+  const currentPage = window.vocabularyState?.currentPage || 1;
+  const searchTerm = window.vocabularyState?.searchTerm || '';
+  const currentFilter = window.vocabularyState?.currentFilter || 'all';
+  
   const totalPages = Math.ceil(filteredWords.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const currentPageWords = filteredWords.slice(startIndex, endIndex);
 
+  const vocabularyTableBody = document.getElementById('vocabulary-table-body');
   if (vocabularyTableBody) {
     if (currentPageWords.length === 0) {
       vocabularyTableBody.innerHTML = `
@@ -139,24 +125,24 @@ export function updateWordsDisplay() {
     }
   }
 
-  if (totalCountEl) {
-    totalCountEl.textContent = `共 ${filteredWords.length} 个单词`;
-  }
-
-  if (prevPageBtn && nextPageBtn) {
-    prevPageBtn.disabled = currentPage <= 1;
-    nextPageBtn.disabled = currentPage >= totalPages;
-  }
+  updateTotalCount();
+  updatePaginationButtons();
 }
 
 export function updateTotalCount() {
+    const totalCountEl = document.getElementById('total-count');
     if (totalCountEl) {
         totalCountEl.textContent = `共 ${filteredWords.length} 个单词`;
     }
 }
 
 export function updatePaginationButtons() {
+    const currentPage = window.vocabularyState?.currentPage || 1;
     const totalPages = Math.ceil(filteredWords.length / pageSize);
+    
+    const prevPageBtn = document.getElementById('prev-page');
+    const nextPageBtn = document.getElementById('next-page');
+    
     if (prevPageBtn && nextPageBtn) {
         prevPageBtn.disabled = currentPage <= 1;
         nextPageBtn.disabled = currentPage >= totalPages;
