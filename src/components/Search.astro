@@ -171,9 +171,14 @@
   }
   
   document.addEventListener('click', (event) => {
-    const target = event.target as Node;
-    if (searchResultsContainer && inputElement && target && !searchResultsContainer.contains(target) && target !== inputElement) {
-      searchResultsContainer.classList.add('hidden');
+    const target = event.target;
+    // Ensure target is a Node before using in contains method.
+    if (target instanceof Node) {
+      if (searchResultsContainer && inputElement && 
+          !searchResultsContainer.contains(target) && 
+          target !== inputElement) {
+        searchResultsContainer.classList.add('hidden');
+      }
     }
   });
   
