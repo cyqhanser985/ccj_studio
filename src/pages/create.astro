@@ -83,7 +83,22 @@ const tags = [...new Set(allEntries
         
         <div>
           <label for="content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">内容 (Markdown)</label>
+          
+          <!-- 图片上传控件 -->
+          <div class="mb-4">
+            <label for="image-upload" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">上传图片</label>
+            <input type="file" id="image-upload" name="image-upload" accept="image/*" class="w-full text-sm text-gray-900 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none file:bg-blue-50 file:dark:bg-gray-800 file:text-blue-600 file:dark:text-blue-300 file:font-medium file:py-2 file:px-4 file:border-0 file:mr-4 hover:file:bg-blue-100 dark:hover:file:bg-gray-700">
+            <div id="image-preview-container" class="mt-2"></div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">上传图片后，Markdown 引用将自动插入到下方内容区域的光标位置。</p>
+          </div>
+
           <textarea id="content" name="content" rows="15" placeholder="在此输入 Markdown 格式的内容..." class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 font-mono"></textarea>
+        </div>
+        
+        <!-- Draft Switch -->
+        <div class="flex items-center">
+          <input id="draft" name="draft" type="checkbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+          <label for="draft" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">设为草稿</label>
         </div>
         
         <div class="flex justify-end space-x-3">
@@ -245,99 +260,224 @@ const tags = [...new Set(allEntries
     }
   });
   
+  // 图片上传处理
+  const imageUploadInput = document.getElementById('image-upload') as HTMLInputElement;
+  const contentTextArea = document.getElementById('content') as HTMLTextAreaElement;
+  const imagePreviewContainer = document.getElementById('image-preview-container') as HTMLDivElement;
+
+  imageUploadInput.addEventListener('change', async (event) => {
+    const files = (event.target as HTMLInputElement).files;
+    if (!files || files.length === 0) {
+      return;
+    }
+    const file = files[0];
+    const formData = new FormData();
+    formData.append('image', file);
+
+    // 清空预览
+    imagePreviewContainer.innerHTML = ''; 
+    const uploadingText = document.createElement('p');
+    uploadingText.textContent = '正在上传图片...';
+    uploadingText.className = 'text-sm text-gray-500 dark:text-gray-400';
+    imagePreviewContainer.appendChild(uploadingText);
+
+    try {
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      uploadingText.remove(); // 移除上传提示
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: '上传失败，无法解析错误信息' }));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.imageUrl) {
+        const imageName = result.imageUrl.split('/').pop() || 'image';
+        const altText = prompt('请输入图片的描述 (alt text):', imageName.split('.').shift() || 'image');
+        
+        // 根据用户要求修改图片路径为相对路径
+        const relativeImageUrl = `../../../public${result.imageUrl}`; 
+        const imageMarkdown = `![${altText || imageName}](${relativeImageUrl})\\n`;
+        
+        // 插入到光标位置
+        const cursorPos = contentTextArea.selectionStart;
+        const textBefore = contentTextArea.value.substring(0, cursorPos);
+        const textAfter = contentTextArea.value.substring(cursorPos);
+        contentTextArea.value = textBefore + imageMarkdown + textAfter;
+
+        // 显示预览
+        const imgPreview = document.createElement('img');
+        imgPreview.src = result.imageUrl;
+        imgPreview.alt = altText || '图片预览';
+        imgPreview.className = 'max-w-xs max-h-32 mt-2 rounded border border-gray-300 dark:border-gray-600';
+        imagePreviewContainer.appendChild(imgPreview);
+
+        const successMsg = document.createElement('p');
+        successMsg.textContent = `图片上传成功: ${result.imageUrl}`;
+        successMsg.className = 'text-sm text-green-600 dark:text-green-400';
+        imagePreviewContainer.appendChild(successMsg);
+
+        // 清空文件输入，以便可以再次选择同一文件
+        imageUploadInput.value = ''; 
+
+      } else {
+        throw new Error(result.message || '图片上传成功，但未返回URL');
+      }
+    } catch (error) {
+      console.error('图片上传错误:', error);
+      const errorMsg = document.createElement('p');
+      errorMsg.textContent = `图片上传失败: ${error instanceof Error ? error.message : String(error)}`;
+      errorMsg.className = 'text-sm text-red-600 dark:text-red-400';
+      imagePreviewContainer.appendChild(errorMsg);
+    }
+  });
+  
   // 表单提交
   const form = document.getElementById('create-form') as HTMLFormElement;
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    // 获取表单数据
-    const formData = new FormData(form);
-    const contentType = formData.get('content-type') as string;
-    const title = formData.get('title') as string;
-    const filename = formData.get('filename') as string || '';
-    const description = formData.get('description') as string || '';
-    const category = formData.get('category') as string || '';
-    const content = formData.get('content') as string;
-    const date = new Date().toISOString();
-    
-    // 创建文件名（使用用户输入的文件名或根据标题生成）
-    let slug = filename.trim();
-    if (!slug) {
-      // 如果没有提供文件名，则根据标题生成
-      slug = title
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, '') // 移除特殊字符
-        .replace(/\s+/g, '-') // 空格替换为连字符
-        .replace(/--+/g, '-'); // 移除连续连字符
-    } else {
-      // 确保文件名符合规范
-      slug = slug
-        .toLowerCase()
-        .replace(/[^\w\s-_]/g, '') // 只允许字母、数字、连字符和下划线
-        .replace(/\s+/g, '-')
-        .replace(/--+/g, '-');
-    }
-    
-    // 构建 frontmatter
-    const frontmatter = `---
-title: "${title}"
-date: ${date}
-description: "${description}"
-tags: ${JSON.stringify(currentTags)}
-category: "${category}"
-draft: false
----
+    console.log('表单提交开始');
 
-${content}`;
+    const contentTypeSelect = document.getElementById('content-type') as HTMLSelectElement;
+    const titleInput = document.getElementById('title') as HTMLInputElement;
+    const filenameInput = document.getElementById('filename') as HTMLInputElement;
+    const descriptionTextarea = document.getElementById('description') as HTMLTextAreaElement;
+    const categoryInput = document.getElementById('category') as HTMLInputElement;
+    const hiddenTagsInput = document.getElementById('tags') as HTMLInputElement;
+    const contentTextarea = document.getElementById('content') as HTMLTextAreaElement;
+    const draftCheckbox = document.getElementById('draft') as HTMLInputElement; // 获取 draft 复选框
+
+
+    // 提取和格式化数据
+    const contentType = contentTypeSelect.value;
+    const title = titleInput.value;
+    let slug = filenameInput.value.trim();
+    const description = descriptionTextarea.value;
+    const category = categoryInput.value;
+    const tagsArray = currentTags; // 使用 currentTags 数组
+    const contentBody = contentTextarea.value;
+    const isDraft = draftCheckbox.checked; // 获取 draft 状态
+    const date = new Date().toISOString();
+
+    if (!title) {
+      alert('标题不能为空');
+      return;
+    }
+
+    // 如果文件名为空，则根据标题自动生成
+    if (!slug) {
+      slug = title.toLowerCase()
+                 .replace(/\s+/g, '-')      // 替换空格为连字符
+                 .replace(/[^\w-]+/g, '') // 移除特殊字符
+                 .replace(/--+/g, '-');     // 替换多个连字符为一个
+      if(!slug) slug = 'untitled-' + Date.now(); // 防止空标题或只有特殊字符的标题
+    }
+    slug = slug.replace(/\\.md$/i, ''); // 移除可能存在的.md后缀
+
+
+    // 构建 frontmatter 对象
+    const frontmatterData: { [key: string]: any } = {
+      title: title,
+      date: date,
+      draft: isDraft, // 添加 draft 状态
+    };
+    if (description) frontmatterData.description = description;
+    if (category) frontmatterData.category = category;
+    if (tagsArray.length > 0) frontmatterData.tags = tagsArray;
+    
+    // 如果是博客类型且内容配置文件中有 image 字段，可以考虑在此处添加一个用于主图的逻辑
+    // 例如: frontmatterData.image = "/path/to/main-image.jpg"; (但这需要额外的UI和逻辑)
+
+    // 构建完整的 Markdown 内容
+    let markdownContent = '---\\n';
+    for (const key in frontmatterData) {
+      if (Object.prototype.hasOwnProperty.call(frontmatterData, key)) {
+        const value = frontmatterData[key];
+        if (key === 'title' || key === 'description' || key === 'category' || key === 'date') {
+          if (value !== null && value !== undefined) { 
+            markdownContent += `${key}: "${String(value).replace(/"/g, '\\\\"')}"\\n`;
+          }
+        } else if (key === 'tags' && Array.isArray(value)) {
+          markdownContent += `${key}: ${JSON.stringify(value)}\\n`;
+        } else if (key === 'draft' && typeof value === 'boolean') {
+          markdownContent += `${key}: ${value}\\n`;
+        } else {
+          if (typeof value === 'string') {
+            markdownContent += `${key}: "${value.replace(/"/g, '\\\\"')}"\\n`;
+          } else if (value !== null && value !== undefined) {
+             markdownContent += `${key}: ${value}\\n`;
+          }
+        }
+      }
+    }
+    markdownContent += '---\\n\\n' + contentBody;
+
+    const payload = {
+      contentType: contentType,
+      slug: slug,
+      frontmatter: markdownContent,
+    };
+    console.log('准备发送的数据:', payload);
 
     try {
-      // 确保数据格式正确
-      const requestData = {
-        contentType,
-        slug,
-        frontmatter
-      };
-      
-      console.log('准备发送创建内容请求:', {
-        contentType,
-        slug,
-        frontmatterLength: frontmatter.length
-      });
-      
-      // 发送到服务器创建文件的请求
       const response = await fetch('/api/create-content', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestData),
+        body: JSON.stringify(payload),
       });
-      
-      console.log('服务器响应状态:', response.status);
-      
-      // 获取响应文本，以便于调试
-      const responseText = await response.text();
-      console.log('响应文本:', responseText);
-      
-      // 尝试解析JSON
-      let responseData;
+      console.log('API响应状态:', response.status);
+
+      const responseBody = await response.text(); // 先获取文本，再尝试解析
+      console.log('API响应体 (原始):', responseBody);
+
+      if (!response.ok) {
+        let errorData = { message: `HTTP错误! 状态: ${response.status}` };
+        try {
+          errorData = JSON.parse(responseBody);
+        } catch (e) {
+          console.error('无法解析错误响应JSON:', e);
+          errorData.message = responseBody || errorData.message;
+        }
+        console.error('API错误数据:', errorData);
+        throw new Error(errorData.message || '创建内容失败');
+      }
+
+      let result;
       try {
-        responseData = JSON.parse(responseText);
-      } catch (jsonError) {
-        console.error('解析响应JSON失败:', jsonError);
-        throw new Error(`服务器响应无效: ${responseText}`);
+        result = JSON.parse(responseBody);
+      } catch (e) {
+         console.error('无法解析成功响应JSON:', e);
+         alert('内容可能已创建，但服务器响应格式不正确。');
+         // 即使无法解析JSON，如果状态码是2xx，也可能意味着操作成功了
+         // 可以尝试检查slug是否真的生成了页面
+         if (payload.slug && payload.contentType) {
+            const checkUrl = `/${payload.contentType}/${payload.slug}`;
+            console.log("尝试跳转到: ", checkUrl);
+            // 可以给用户一个提示，或者尝试跳转
+            // window.location.href = checkUrl; // 或者提示用户手动检查
+         }
+         return;
       }
-      
-      if (response.ok) {
-        // 显示成功消息并重定向
-        alert('内容创建成功！');
-        window.location.href = responseData.url;
+
+
+      console.log('API成功结果:', result);
+
+      if (result.success && result.url) {
+        alert('内容创建成功！即将跳转...');
+        window.location.href = result.url;
       } else {
-        throw new Error(responseData.message || '创建内容失败');
+        throw new Error(result.message || '创建内容失败，但API未返回明确错误信息');
       }
-    } catch (error: unknown) {
-      console.error('创建内容过程中出现错误:', error);
-      alert(`创建内容失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } catch (error) {
+      console.error('创建内容过程中出错:', error);
+      alert(`创建失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   });
   
