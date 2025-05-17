@@ -8,6 +8,7 @@ const ADMIN_PASSWORD = "Cyq20060804";
 // 获取所有文章（用于统计）
 const blogEntries = await getCollection('blog');
 const notesEntries = await getCollection('notes');
+const vocabularyEntries = await getCollection('vocabulary'); // Added
 ---
 
 <Layout title="开发者模式">
@@ -43,7 +44,7 @@ const notesEntries = await getCollection('notes');
             <div class="text-sm text-gray-600 dark:text-gray-400">学习笔记</div>
           </div>
           <div class="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg">
-            <div class="text-3xl font-bold text-purple-600 dark:text-purple-300" id="vocabulary-count">0</div>
+            <div class="text-3xl font-bold text-purple-600 dark:text-purple-300" id="vocabulary-count">{vocabularyEntries.length}</div>
             <div class="text-sm text-gray-600 dark:text-gray-400">单词数量</div>
           </div>
         </div>
@@ -86,6 +87,30 @@ const notesEntries = await getCollection('notes');
         </form>
       </div>
       
+      <!-- 添加单词 -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8">
+        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">添加新单词</h2>
+        <form id="add-vocabulary-form" class="space-y-6">
+          <div>
+            <label for="vocab-word" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">单词</label>
+            <input type="text" id="vocab-word" name="word" required class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="例如: example">
+          </div>
+          <div>
+            <label for="vocab-markdown" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Markdown 内容 (单词释义、例句等)</label>
+            <textarea id="vocab-markdown" name="markdownContent" rows="5" required class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="输入 Markdown 格式的单词解释和用法..."></textarea>
+          </div>
+          <div class="flex items-center">
+            <input type="checkbox" id="vocab-draft" name="draft" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+            <label for="vocab-draft" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">设为草稿</label>
+          </div>
+          <div class="flex justify-end">
+            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+              添加单词
+            </button>
+          </div>
+        </form>
+      </div>
+
       <!-- 头像上传 -->
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
         <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">头像设置</h2>
@@ -148,7 +173,8 @@ const notesEntries = await getCollection('notes');
   const avatarForm = document.getElementById('avatar-form') as HTMLFormElement;
   const avatarUpload = document.getElementById('avatar-upload') as HTMLInputElement;
   const avatarPreview = document.getElementById('avatar-preview') as HTMLImageElement;
-  const vocabularyCount = document.getElementById('vocabulary-count') as HTMLDivElement;
+  const vocabularyCountEl = document.getElementById('vocabulary-count') as HTMLDivElement; // Renamed
+  const addVocabularyForm = document.getElementById('add-vocabulary-form') as HTMLFormElement; // Added
   
   // 检查是否已登录
   let isLoggedIn = localStorage.getItem('admin_logged_in') === 'true';
@@ -161,7 +187,7 @@ const notesEntries = await getCollection('notes');
     
     setupEventListeners();
     loadAuthorInfo();
-    loadVocabularyCount();
+    loadAndDisplayVocabularyCount(); // Updated function name
   }
   
   // 验证密码
@@ -306,15 +332,58 @@ const notesEntries = await getCollection('notes');
     }
   }
   
-  // 加载单词数量
-  function loadVocabularyCount() {
+  // 加载并显示单词数量 (Initial count is rendered by Astro)
+  function loadAndDisplayVocabularyCount() {
+    // The initial count is set by Astro in the HTML.
+    // This function is kept for structure, could be used for future dynamic updates.
+    // console.log('Vocabulary count display initialized by Astro.');
+  }
+
+  // 处理添加单词表单提交
+  async function handleAddVocabularySubmit(event: Event) {
+    event.preventDefault();
+    if (!addVocabularyForm) return; // Type guard
+    const formData = new FormData(addVocabularyForm);
+    const word = formData.get('word') as string;
+    const markdownContent = formData.get('markdownContent') as string;
+    const draft = (formData.get('draft') === 'on');
+
+    if (!word.trim() || !markdownContent.trim()) {
+      alert('单词和 Markdown 内容不能为空！');
+      return;
+    }
+
+    const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
     try {
-      const storedWords = localStorage.getItem(VOCAB_KEY);
-      const words = storedWords ? JSON.parse(storedWords) : [];
-      vocabularyCount.textContent = words.length.toString();
+      const response = await fetch('/api/create-vocabulary', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          word,
+          markdownContent,
+          date: currentDate,
+          draft,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        alert('单词添加成功！');
+        addVocabularyForm.reset();
+        if (vocabularyCountEl) { // Use the renamed variable
+          const currentCount = parseInt(vocabularyCountEl.textContent || '0');
+          vocabularyCountEl.textContent = (currentCount + 1).toString();
+        }
+      } else {
+        alert(`添加失败: ${result.message || '未知错误'}`);
+      }
     } catch (error) {
-      console.error('加载单词数量失败:', error);
-      vocabularyCount.textContent = '0';
+      console.error('添加单词时出错:', error);
+      alert('添加单词时发生网络错误。');
     }
   }
   
@@ -343,8 +412,13 @@ const notesEntries = await getCollection('notes');
     if (avatarForm) {
       avatarForm.addEventListener('submit', handleAvatarUpload);
     }
+    
+    // 添加单词表单
+    if (addVocabularyForm) { // Added
+      addVocabularyForm.addEventListener('submit', handleAddVocabularySubmit); // Added
+    }
   }
   
   // 初始化页面
   document.addEventListener('DOMContentLoaded', init);
-</script> 
+</script>

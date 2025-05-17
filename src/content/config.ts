@@ -25,8 +25,19 @@ const notesCollection = defineCollection({
   }),
 });
 
+// 定义单词集合的模式
+const vocabularyCollection = defineCollection({
+  schema: z.object({
+    word: z.string(), // 单词本身
+    date: z.date(), // 添加日期
+    draft: z.boolean().default(false), // 是否为草稿
+    // Markdown 内容将作为词条的详细解释
+  }),
+});
+
 // 导出集合
 export const collections = {
   'blog': blogCollection,
   'notes': notesCollection,
-}; 
+  'vocabulary': vocabularyCollection, // 添加新的单词集合
+};

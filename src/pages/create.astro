@@ -394,24 +394,37 @@ const tags = [...new Set(allEntries
     // 例如: frontmatterData.image = "/path/to/main-image.jpg"; (但这需要额外的UI和逻辑)
 
     // 构建完整的 Markdown 内容
-    let markdownContent = '---\\n';
-    for (const key in frontmatterData) {
-      if (Object.prototype.hasOwnProperty.call(frontmatterData, key)) {
+    let markdownContent = '---\n';
+    // 按指定顺序生成frontmatter字段
+    const orderedFields = ['title', 'description', 'date', 'tags', 'category', 'draft'];
+    
+    orderedFields.forEach(key => {
+      if (frontmatterData[key] !== undefined) {
         const value = frontmatterData[key];
-        if (key === 'title' || key === 'description' || key === 'category' || key === 'date') {
-          if (value !== null && value !== undefined) { 
-            markdownContent += `${key}: "${String(value).replace(/"/g, '\\\\"')}"\\n`;
-          }
+        // 特殊处理日期字段，不添加引号
+        if (key === 'date') {
+          markdownContent += `${key}: ${value}\n`;
+          return;
+        }
+        
+        if (key === 'title' || key === 'description' || key === 'category') {
+          markdownContent += `${key}: "${String(value).replace(/"/g, '\\\\"')}"\\n`;
         } else if (key === 'tags' && Array.isArray(value)) {
           markdownContent += `${key}: ${JSON.stringify(value)}\\n`;
         } else if (key === 'draft' && typeof value === 'boolean') {
           markdownContent += `${key}: ${value}\\n`;
-        } else {
-          if (typeof value === 'string') {
-            markdownContent += `${key}: "${value.replace(/"/g, '\\\\"')}"\\n`;
-          } else if (value !== null && value !== undefined) {
-             markdownContent += `${key}: ${value}\\n`;
-          }
+        }
+      }
+    });
+    
+    // 处理其他可能存在的字段
+    for (const key in frontmatterData) {
+      if (!orderedFields.includes(key) && frontmatterData[key] !== undefined) {
+        const value = frontmatterData[key];
+        if (typeof value === 'string') {
+          markdownContent += `${key}: "${value.replace(/"/g, '\\\\"')}"\\n`;
+        } else if (value !== null && value !== undefined) {
+          markdownContent += `${key}: ${value}\\n`;
         }
       }
     }
