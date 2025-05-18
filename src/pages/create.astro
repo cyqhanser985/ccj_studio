@@ -186,7 +186,6 @@ const tags = [...new Set(allEntries
           typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
         ).join(' ');
         const logEntry = `[${timestamp}] [${type}] ${formattedArgs}`;
-        // 限制日志数量，防止内存溢出，例如保留最新的100条
         const logs = (debugLog.textContent || '').split('\n');
         if (logs.length > 100) logs.pop();
         debugLog.textContent = logEntry + '\n' + logs.join('\n');
@@ -202,10 +201,10 @@ const tags = [...new Set(allEntries
   }
 
   // --- 标签管理 ---
-  let currentTagsSet: Set<string> = new Set(); // 使用 Set 自动处理重复标签
+  let currentTagsSet: Set<string> = new Set(); 
 
   function renderTags() {
-    tagsDisplayContainer.innerHTML = ''; // 清空现有标签显示
+    tagsDisplayContainer.innerHTML = ''; 
     currentTagsSet.forEach(tag => {
       const tagElement = document.createElement('div');
       tagElement.className = 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded px-2 py-1 flex items-center text-sm';
@@ -219,15 +218,16 @@ const tags = [...new Set(allEntries
       removeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`;
       removeButton.onclick = () => {
         currentTagsSet.delete(tag);
-        renderTags(); // 重新渲染标签
+        renderTags(); 
       };
       
       tagElement.appendChild(tagNameSpan);
       tagElement.appendChild(removeButton);
       tagsDisplayContainer.appendChild(tagElement);
     });
-    // 更新隐藏输入框的值，用于表单提交
     tagsHiddenInput.value = JSON.stringify(Array.from(currentTagsSet));
+    // 在每次渲染标签后打印当前标签集合，方便调试
+    console.log('Updated currentTagsSet:', currentTagsSet); 
   }
 
   function handleAddTag() {
@@ -235,15 +235,15 @@ const tags = [...new Set(allEntries
     if (tagValue) {
       currentTagsSet.add(tagValue);
       renderTags();
-      tagInputElement.value = ''; // 清空输入框
-      tagInputElement.focus(); // 重新聚焦输入框
+      tagInputElement.value = ''; 
+      tagInputElement.focus(); 
     }
   }
 
   addTagButton.addEventListener('click', handleAddTag);
   tagInputElement.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
-      event.preventDefault(); // 防止表单因回车提交
+      event.preventDefault(); 
       handleAddTag();
     }
   });
@@ -257,7 +257,7 @@ const tags = [...new Set(allEntries
     const formData = new FormData();
     formData.append('image', file);
 
-    imagePreviewContainer.innerHTML = ''; // 清空之前的预览和消息
+    imagePreviewContainer.innerHTML = ''; 
     const uploadingMsg = document.createElement('p');
     uploadingMsg.textContent = '正在上传图片...';
     uploadingMsg.className = 'text-sm text-gray-500 dark:text-gray-400';
@@ -265,7 +265,7 @@ const tags = [...new Set(allEntries
 
     try {
       const response = await fetch('/api/upload-image', { method: 'POST', body: formData });
-      uploadingMsg.remove(); // 移除“正在上传”消息
+      uploadingMsg.remove(); 
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: '上传失败，无法解析服务器错误信息。' }));
@@ -277,24 +277,18 @@ const tags = [...new Set(allEntries
         const imageName = result.imageUrl.split('/').pop() || 'image';
         const altText = prompt('请输入图片的描述 (alt text):', imageName.split('.').shift() || 'image_alt_text');
         
-        // 注意：'../../../public' 这种路径通常用于构建时或特定服务器配置。
-        // 对于 Astro 中动态加载的 Markdown 内容，如果图片在 public 文件夹下，
-        // 通常使用相对于 public 根目录的路径，如 `/uploads/my-image.png`。
-        // 此处保留用户原有逻辑，但添加注释。
         const relativeImageUrl = `../../../public${result.imageUrl}`; 
         const imageMarkdown = `![${altText || imageName}](${relativeImageUrl})\n`;
         
-        // 将 Markdown 插入到内容文本框的光标位置
         const cursorPos = contentBodyTextarea.selectionStart;
         const textBefore = contentBodyTextarea.value.substring(0, cursorPos);
         const textAfter = contentBodyTextarea.value.substring(cursorPos);
         contentBodyTextarea.value = textBefore + imageMarkdown + textAfter;
-        contentBodyTextarea.focus(); // 重新聚焦文本框
-        contentBodyTextarea.selectionStart = contentBodyTextarea.selectionEnd = cursorPos + imageMarkdown.length; // 移动光标到插入内容后
+        contentBodyTextarea.focus(); 
+        contentBodyTextarea.selectionStart = contentBodyTextarea.selectionEnd = cursorPos + imageMarkdown.length; 
 
-        // 显示图片预览
         const imgPreview = document.createElement('img');
-        imgPreview.src = result.imageUrl; // 预览使用API返回的原始URL
+        imgPreview.src = result.imageUrl; 
         imgPreview.alt = altText || '图片预览';
         imgPreview.className = 'max-w-xs max-h-32 mt-2 rounded border border-gray-300 dark:border-gray-600';
         imagePreviewContainer.appendChild(imgPreview);
@@ -304,7 +298,7 @@ const tags = [...new Set(allEntries
         successMsg.className = 'text-sm text-green-600 dark:text-green-400 mt-1';
         imagePreviewContainer.appendChild(successMsg);
 
-        imageUploadInput.value = ''; // 清空文件输入，以便可以再次选择同一文件
+        imageUploadInput.value = ''; 
       } else {
         throw new Error(result.message || '图片上传成功，但未返回有效的图片URL。');
       }
@@ -318,12 +312,6 @@ const tags = [...new Set(allEntries
   });
 
   // --- 辅助函数 ---
-  /**
-   * 根据标题生成 slug (文件名)。
-   * @param title 标题字符串
-   * @param existingSlug 用户可能已输入的 slug
-   * @returns 生成的 slug
-   */
   function generateSlug(title: string, existingSlug: string = ''): string {
     if (existingSlug.trim()) {
       return existingSlug.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/\.md$/i, '');
@@ -331,27 +319,22 @@ const tags = [...new Set(allEntries
     if (!title) return `untitled-${Date.now()}`;
     
     let slug = title.toLowerCase()
-      .replace(/\s+/g, '-')      // 替换空格为连字符
-      .replace(/[^\w-]+/g, '') // 移除除单词字符和连字符外的所有字符
-      .replace(/--+/g, '-')     // 替换多个连字符为一个
-      .replace(/^-+|-+$/g, ''); // 移除开头和结尾的连字符
+      .replace(/\s+/g, '-')      
+      .replace(/[^\w-]+/g, '') 
+      .replace(/--+/g, '-')     
+      .replace(/^-+|-+$/g, ''); 
     
-    return slug || `untitled-${Date.now()}`; // 如果处理后 slug 为空（例如标题全是特殊字符），则生成一个带时间戳的 slug
+    return slug || `untitled-${Date.now()}`; 
   }
 
-  /**
-   * 格式化 Frontmatter 中的值，特别是处理字符串中的引号。
-   * @param value 要格式化的值
-   * @returns 格式化后的 YAML 字符串值
-   */
   function formatFrontmatterValue(value: any, key: string): string {
     if (key === 'date' || typeof value === 'boolean' || typeof value === 'number') {
-      return String(value); // 日期、布尔值、数字不需要引号
+      return String(value); 
     }
     if (Array.isArray(value)) {
-      return JSON.stringify(value); // 数组使用 JSON 字符串表示
+      // 当前使用 JSON.stringify 生成如 ["tag1", "tag2"] 的格式，这是有效的 YAML
+      return JSON.stringify(value); 
     }
-    // 其他情况（主要是字符串），需要用双引号包裹，并转义内部的双引号
     return `"${String(value).replace(/"/g, '\\"')}"`;
   }
 
@@ -360,15 +343,19 @@ const tags = [...new Set(allEntries
     event.preventDefault();
     console.log('表单提交开始...');
 
-    // 收集表单数据
     const contentType = contentTypeSelect.value;
     const title = titleInput.value.trim();
     const description = descriptionTextarea.value.trim();
     const category = categoryInput.value.trim();
-    const tagsArray = Array.from(currentTagsSet); // 从 Set 获取标签数组
     const contentBody = contentBodyTextarea.value;
     const isDraft = draftCheckbox.checked;
-    const currentDate = new Date().toISOString(); // ISO 格式日期字符串
+    const currentDate = new Date().toISOString(); 
+
+    // === 调试点 1：检查标签数组 ===
+    const tagsArray = Array.from(currentTagsSet); 
+    console.log('[SUBMIT] Current tags in Set:', currentTagsSet);
+    console.log('[SUBMIT] Tags array for frontmatter:', tagsArray);
+    // ============================
 
     if (!title) {
       alert('标题不能为空！');
@@ -376,22 +363,22 @@ const tags = [...new Set(allEntries
       return;
     }
 
-    // 生成 slug
     const slug = generateSlug(title, filenameInput.value.trim());
 
-    // 构建 frontmatter 对象
     const frontmatterData: { [key: string]: any } = {
       title: title,
-      date: currentDate, // 使用 ISO 格式
+      date: currentDate, 
       draft: isDraft,
     };
     if (description) frontmatterData.description = description;
     if (category) frontmatterData.category = category;
-    if (tagsArray.length > 0) frontmatterData.tags = tagsArray;
+    if (tagsArray.length > 0) { // 只有当 tagsArray 非空时才添加 tags 属性
+      frontmatterData.tags = tagsArray;
+    }
+    
+    console.log('[SUBMIT] frontmatterData object:', frontmatterData); // 调试 frontmatterData
 
-    // 构建完整的 Markdown 内容（Frontmatter + 正文）
     let markdownContent = '---\n';
-    // 预定义 frontmatter 字段顺序
     const orderedFields = ['title', 'description', 'date', 'category', 'tags', 'draft']; 
     
     orderedFields.forEach(key => {
@@ -400,7 +387,6 @@ const tags = [...new Set(allEntries
       }
     });
     
-    // 添加其他不在预定义顺序中的字段 (如果有)
     for (const key in frontmatterData) {
       if (frontmatterData.hasOwnProperty(key) && !orderedFields.includes(key) && frontmatterData[key] !== undefined) {
         markdownContent += `${key}: ${formatFrontmatterValue(frontmatterData[key], key)}\n`;
@@ -408,12 +394,16 @@ const tags = [...new Set(allEntries
     }
     markdownContent += '---\n\n' + contentBody;
 
+    // === 调试点 2：检查生成的 Markdown ===
+    console.log('[SUBMIT] Generated Markdown Content for API:\n', markdownContent);
+    // ====================================
+
     const payload = {
       contentType: contentType,
       slug: slug,
-      frontmatter: markdownContent, // API 接收完整的 Markdown 文本，包括 frontmatter
+      frontmatter: markdownContent, 
     };
-    console.log('准备发送到 API 的数据:', payload);
+    // console.log('准备发送到 API 的数据:', payload); // 这行可以取消注释以查看完整 payload
 
     try {
       const response = await fetch('/api/create-content', {
@@ -423,37 +413,38 @@ const tags = [...new Set(allEntries
       });
       console.log('API 响应状态:', response.status);
 
-      const responseText = await response.text(); // 先获取文本，避免因非JSON响应导致解析错误
+      const responseText = await response.text(); 
       console.log('API 响应体 (原始文本):', responseText);
 
       if (!response.ok) {
         let errorData = { message: `HTTP 错误! 状态: ${response.status}. 响应: ${responseText}` };
-        try {
-          errorData = JSON.parse(responseText); // 尝试解析为 JSON
-        } catch (e) {
-          console.warn('API 错误响应不是有效的 JSON:', e);
-        }
+        try { errorData = JSON.parse(responseText); } 
+        catch (e) { console.warn('API 错误响应不是有效的 JSON:', e); }
         throw new Error(errorData.message || `创建内容失败，服务器返回: ${response.status}`);
       }
 
       let result;
-      try {
-        result = JSON.parse(responseText); // 解析成功的响应
-      } catch (e) {
+      try { result = JSON.parse(responseText); } 
+      catch (e) {
         console.error('无法解析 API 成功响应的 JSON:', e);
         alert('内容可能已创建，但服务器响应格式不正确。请检查控制台获取更多信息。');
-        // 即使JSON解析失败，如果状态码是2xx，可能操作已成功。
-        // 可以考虑给用户提示或尝试跳转（如果slug已知）。
         return;
       }
       console.log('API 成功结果:', result);
 
-      if (result.success && result.url) {
-        alert('内容创建成功！即将跳转...');
-        window.location.href = result.url; // 跳转到新创建内容的页面
+      // --- 修改跳转逻辑 ---
+      if (result.success) { 
+        alert('内容创建成功！即将跳转到主页...');
+        window.location.href = '/'; // 跳转到主页
       } else {
-        throw new Error(result.message || '创建内容失败，但 API 未返回明确错误信息或 URL。');
+        const errorMessage = result.message || '创建内容失败，但 API 未返回明确错误信息。';
+        if (result.url) { // 如果API仍然返回了url，可以记录一下
+             console.warn(`创建操作返回成功状态为false或未定义，但API返回了URL: ${result.url}. 错误信息: ${errorMessage}`);
+        }
+        throw new Error(errorMessage);
       }
+      // --- 结束修改 ---
+
     } catch (error) {
       console.error('创建内容过程中发生错误:', error);
       alert(`创建失败: ${error instanceof Error ? error.message : String(error)}`);
@@ -465,35 +456,29 @@ const tags = [...new Set(allEntries
     const title = titleInput.value.trim() || "无标题";
     const content = contentBodyTextarea.value;
     
-    // 简单的 HTML 预览，不进行完整的 Markdown 解析
-    // 若需完整 Markdown 预览，可引入 client-side Markdown 解析库 (如 marked.js)
-    // 例如: import { marked } from 'marked'; previewContentArea.innerHTML = marked.parse(...)
     previewContentArea.innerHTML = `<h1>${title.replace(/</g, "<").replace(/>/g, ">")}</h1>\n<div>${content.replace(/</g, "<").replace(/>/g, ">").replace(/\n/g, "<br>")}</div>`; 
     previewModal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden'; // 防止背景滚动
+    document.body.style.overflow = 'hidden'; 
   });
 
   function closePreviewModal() {
     previewModal.classList.add('hidden');
-    document.body.style.overflow = ''; // 恢复背景滚动
+    document.body.style.overflow = ''; 
   }
 
   closePreviewButton.addEventListener('click', closePreviewModal);
   
-  // 点击模态框外部（遮罩层）关闭预览
   previewModal.addEventListener('click', (event) => {
     if (event.target === previewModal) {
       closePreviewModal();
     }
   });
 
-  // ESC键关闭预览
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && !previewModal.classList.contains('hidden')) {
       closePreviewModal();
     }
   });
 
-  // 初始化：渲染一次已有的标签（如果页面加载时就有）
-  renderTags();
+  renderTags(); // 初始化时调用一次以确保UI正确
 </script>
