@@ -2,32 +2,34 @@
 import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 
-// 获取所有分类和标签用于下拉菜单
+// 获取所有博客文章和笔记条目
 const blogEntries = await getCollection('blog');
 const notesEntries = await getCollection('notes');
 const allEntries = [...blogEntries, ...notesEntries];
 
-// 提取所有唯一分类
+// 提取所有唯一的分类，并过滤掉空值
 const categories = [...new Set(allEntries
   .map(entry => entry.data.category)
-  .filter(Boolean))];
+  .filter(Boolean))]; // filter(Boolean) 会移除 undefined, null, false, 0, NaN, ''
 
-// 提取所有唯一标签
+// 提取所有唯一的标签，并处理可能不存在的 tags 字段
 const tags = [...new Set(allEntries
-  .flatMap(entry => entry.data.tags || []))];
+  .flatMap(entry => entry.data.tags || []))]; // flatMap 会将嵌套数组扁平化，|| [] 确保即使 tags 未定义也不会出错
 ---
 
 <Layout title="创建新内容">
   <div class="max-w-4xl mx-auto py-8 px-4">
     <h1 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white">创建新内容</h1>
-    
+
+    {/* 调试信息面板，仅在 localhost 环境下显示 */}
     <div id="debug-panel" class="bg-gray-100 dark:bg-gray-900 border-l-4 border-blue-500 p-4 mb-6 rounded-lg hidden">
-      <h3 class="text-lg font-semibold mb-2">调试信息</h3>
-      <pre id="debug-log" class="text-xs overflow-auto max-h-32 bg-white dark:bg-gray-800 p-2 rounded">等待日志...</pre>
+      <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">调试信息</h3>
+      <pre id="debug-log" class="text-xs overflow-auto max-h-32 bg-white dark:bg-gray-800 p-2 rounded text-gray-700 dark:text-gray-300">等待日志...</pre>
     </div>
-    
+
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
       <form id="create-form" class="space-y-6">
+        {/* 内容类型选择 */}
         <div>
           <label for="content-type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">内容类型</label>
           <select id="content-type" name="content-type" required class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
@@ -35,23 +37,27 @@ const tags = [...new Set(allEntries
             <option value="notes">学习笔记</option>
           </select>
         </div>
-        
+
+        {/* 标题输入 */}
         <div>
           <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">标题</label>
           <input type="text" id="title" name="title" required placeholder="输入标题" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
         </div>
-        
+
+        {/* 文件名输入 */}
         <div>
-          <label for="filename" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">文件名</label>
-          <input type="text" id="filename" name="filename" placeholder="输入文件名（不含扩展名，留空则自动生成）" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">仅使用英文、数字、连字符和下划线，不含扩展名。留空将根据标题自动生成。</p>
+          <label for="filename" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">文件名 (Slug)</label>
+          <input type="text" id="filename" name="filename" placeholder="输入文件名（可选，留空则自动生成）" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">仅使用小写英文、数字、连字符。例如: "my-first-post"。不含扩展名。</p>
         </div>
-        
+
+        {/* 描述输入 */}
         <div>
           <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">描述</label>
           <textarea id="description" name="description" rows="2" placeholder="输入简短描述（可选）" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
         </div>
-        
+
+        {/* 分类输入 */}
         <div>
           <label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">分类</label>
           <div class="flex space-x-2">
@@ -63,460 +69,431 @@ const tags = [...new Set(allEntries
             </datalist>
           </div>
         </div>
-        
+
+        {/* 标签输入 */}
         <div>
-          <label for="tags" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">标签</label>
+          <label for="tag-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">标签</label>
           <div class="flex space-x-2">
-            <input id="tag-input" type="text" placeholder="输入标签后按回车" list="tag-list" class="flex-1 rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            <input id="tag-input" type="text" placeholder="输入标签后按回车或点击添加" list="tag-list" class="flex-1 rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
             <datalist id="tag-list">
               {tags.map(tag => (
                 <option value={tag} />
               ))}
             </datalist>
-            <button type="button" id="add-tag" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <button type="button" id="add-tag-btn" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
               添加
             </button>
           </div>
-          <div id="tags-container" class="flex flex-wrap gap-2 mt-2"></div>
-          <input type="hidden" id="tags" name="tags" value="">
+          <div id="tags-display-container" class="flex flex-wrap gap-2 mt-2"></div>
+          {/* 隐藏输入框，用于表单提交时收集所有标签 */}
+          <input type="hidden" id="tags-hidden-input" name="tags" value="">
         </div>
-        
+
+        {/* 内容输入 (Markdown) */}
         <div>
-          <label for="content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">内容 (Markdown)</label>
+          <label for="content-body" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">内容 (Markdown)</label>
           
-          <!-- 图片上传控件 -->
+          {/* 图片上传控件 */}
           <div class="mb-4">
-            <label for="image-upload" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">上传图片</label>
-            <input type="file" id="image-upload" name="image-upload" accept="image/*" class="w-full text-sm text-gray-900 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none file:bg-blue-50 file:dark:bg-gray-800 file:text-blue-600 file:dark:text-blue-300 file:font-medium file:py-2 file:px-4 file:border-0 file:mr-4 hover:file:bg-blue-100 dark:hover:file:bg-gray-700">
+            <label for="image-upload-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">上传图片到内容</label>
+            <input type="file" id="image-upload-input" name="image-upload" accept="image/*" class="w-full text-sm text-gray-900 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none file:bg-blue-50 file:dark:bg-gray-800 file:text-blue-600 file:dark:text-blue-300 file:font-medium file:py-2 file:px-4 file:border-0 file:mr-4 hover:file:bg-blue-100 dark:hover:file:bg-gray-700">
             <div id="image-preview-container" class="mt-2"></div>
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">上传图片后，Markdown 引用将自动插入到下方内容区域的光标位置。</p>
           </div>
 
-          <textarea id="content" name="content" rows="15" placeholder="在此输入 Markdown 格式的内容..." class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 font-mono"></textarea>
+          <textarea id="content-body" name="content" rows="15" placeholder="在此输入 Markdown 格式的内容..." class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 font-mono"></textarea>
         </div>
         
-        <!-- Draft Switch -->
+        {/* 草稿开关 */}
         <div class="flex items-center">
-          <input id="draft" name="draft" type="checkbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
-          <label for="draft" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">设为草稿</label>
+          <input id="draft-checkbox" name="draft" type="checkbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+          <label for="draft-checkbox" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">设为草稿</label>
         </div>
         
+        {/* 操作按钮 */}
         <div class="flex justify-end space-x-3">
           <button type="button" id="preview-btn" class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
             预览
           </button>
-          <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          <button type="submit" id="save-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
             保存
           </button>
         </div>
       </form>
     </div>
     
-    <!-- 预览模态框 -->
-    <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    {/* 预览模态框 */}
+    <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
       <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-bold text-gray-900 dark:text-white">预览</h2>
-          <button id="close-preview" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+          <button id="close-preview-btn" aria-label="关闭预览" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
-        <div id="preview-content" class="prose dark:prose-invert max-w-none">
-          <!-- 预览内容将在这里动态显示 -->
-        </div>
+        <article id="preview-content-area" class="prose dark:prose-invert max-w-none">
+          {/* 预览内容将在这里动态显示 */}
+        </article>
       </div>
     </div>
   </div>
 </Layout>
 
 <script>
-  // 显示调试日志
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  // --- DOM 元素获取 ---
   const debugPanel = document.getElementById('debug-panel') as HTMLDivElement;
   const debugLog = document.getElementById('debug-log') as HTMLPreElement;
   
-  // 仅在localhost下显示调试面板
+  const createForm = document.getElementById('create-form') as HTMLFormElement;
+  const contentTypeSelect = document.getElementById('content-type') as HTMLSelectElement;
+  const titleInput = document.getElementById('title') as HTMLInputElement;
+  const filenameInput = document.getElementById('filename') as HTMLInputElement;
+  const descriptionTextarea = document.getElementById('description') as HTMLTextAreaElement;
+  const categoryInput = document.getElementById('category') as HTMLInputElement;
+  const contentBodyTextarea = document.getElementById('content-body') as HTMLTextAreaElement;
+  const draftCheckbox = document.getElementById('draft-checkbox') as HTMLInputElement;
+
+  // 标签管理元素
+  const tagInputElement = document.getElementById('tag-input') as HTMLInputElement;
+  const addTagButton = document.getElementById('add-tag-btn') as HTMLButtonElement;
+  const tagsDisplayContainer = document.getElementById('tags-display-container') as HTMLDivElement;
+  const tagsHiddenInput = document.getElementById('tags-hidden-input') as HTMLInputElement;
+
+  // 图片上传元素
+  const imageUploadInput = document.getElementById('image-upload-input') as HTMLInputElement;
+  const imagePreviewContainer = document.getElementById('image-preview-container') as HTMLDivElement;
+
+  // 预览模态框元素
+  const previewButton = document.getElementById('preview-btn') as HTMLButtonElement;
+  const previewModal = document.getElementById('preview-modal') as HTMLDivElement;
+  const closePreviewButton = document.getElementById('close-preview-btn') as HTMLButtonElement;
+  const previewContentArea = document.getElementById('preview-content-area') as HTMLDivElement;
+  
+  // --- 调试日志功能 ---
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   if (isLocalhost) {
     debugPanel.classList.remove('hidden');
-    
-    // 捕获控制台日志
     const originalConsoleLog = console.log;
     const originalConsoleError = console.error;
     const originalConsoleWarn = console.warn;
-    
+
     const logToDebugPanel = (type: string, ...args: any[]) => {
       try {
         const timestamp = new Date().toLocaleTimeString();
-        const formattedArgs = args.map(arg => {
-          if (typeof arg === 'object') {
-            return JSON.stringify(arg, null, 2);
-          }
-          return String(arg);
-        }).join(' ');
-        
+        const formattedArgs = args.map(arg => 
+          typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+        ).join(' ');
         const logEntry = `[${timestamp}] [${type}] ${formattedArgs}`;
-        debugLog.textContent = logEntry + '\n' + debugLog.textContent;
-      } catch (e) {
-        // 忽略记录错误
-      }
+        // 限制日志数量，防止内存溢出，例如保留最新的100条
+        const logs = (debugLog.textContent || '').split('\n');
+        if (logs.length > 100) logs.pop();
+        debugLog.textContent = logEntry + '\n' + logs.join('\n');
+      } catch (e) { /* 忽略记录错误 */ }
     };
-    
-    console.log = (...args) => {
-      originalConsoleLog.apply(console, args);
-      logToDebugPanel('LOG', ...args);
-    };
-    
-    console.error = (...args) => {
-      originalConsoleError.apply(console, args);
-      logToDebugPanel('ERROR', ...args);
-    };
-    
-    console.warn = (...args) => {
-      originalConsoleWarn.apply(console, args);
-      logToDebugPanel('WARN', ...args);
-    };
-    
-    // 捕获全局错误
-    window.addEventListener('error', (event) => {
-      logToDebugPanel('GLOBAL ERROR', event.message, 'at', event.filename, 'line', event.lineno);
-    });
-    
-    window.addEventListener('unhandledrejection', (event) => {
-      logToDebugPanel('UNHANDLED PROMISE', event.reason);
-    });
+
+    console.log = (...args) => { originalConsoleLog.apply(console, args); logToDebugPanel('LOG', ...args); };
+    console.error = (...args) => { originalConsoleError.apply(console, args); logToDebugPanel('ERROR', ...args); };
+    console.warn = (...args) => { originalConsoleWarn.apply(console, args); logToDebugPanel('WARN', ...args); };
+    window.addEventListener('error', (event) => logToDebugPanel('GLOBAL ERROR', event.message, '@', event.filename, 'L', event.lineno));
+    window.addEventListener('unhandledrejection', (event) => logToDebugPanel('UNHANDLED PROMISE', event.reason));
+    console.log('调试面板已初始化。');
   }
 
-  // 标签管理
-  const tagInput = document.getElementById('tag-input') as HTMLInputElement;
-  const addTagButton = document.getElementById('add-tag') as HTMLButtonElement;
-  const tagsContainer = document.getElementById('tags-container') as HTMLDivElement;
-  const tagsInput = document.getElementById('tags') as HTMLInputElement;
-  
-  // 存储当前标签
-  let currentTags: string[] = [];
-  
-  // 添加标签函数
-  function addTag(tag: string) {
-    if (!tag || currentTags.includes(tag)) return;
-    
-    currentTags.push(tag);
-    updateTagsUI();
-  }
-  
-  // 更新标签UI
-  function updateTagsUI() {
-    // 清空容器
-    tagsContainer.innerHTML = '';
-    
-    // 为每个标签创建UI元素
-    currentTags.forEach((tag, index) => {
-      const tagEl = document.createElement('div');
-      tagEl.className = 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded px-2 py-1 flex items-center text-sm';
-      tagEl.innerHTML = `
-        <span>${tag}</span>
-        <button type="button" data-index="${index}" class="ml-1 text-blue-500 hover:text-blue-700">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      `;
-      tagsContainer.appendChild(tagEl);
+  // --- 标签管理 ---
+  let currentTagsSet: Set<string> = new Set(); // 使用 Set 自动处理重复标签
+
+  function renderTags() {
+    tagsDisplayContainer.innerHTML = ''; // 清空现有标签显示
+    currentTagsSet.forEach(tag => {
+      const tagElement = document.createElement('div');
+      tagElement.className = 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded px-2 py-1 flex items-center text-sm';
       
-      // 添加删除监听器
-      const deleteBtn = tagEl.querySelector('button');
-      if (deleteBtn) {
-        deleteBtn.addEventListener('click', () => {
-          currentTags.splice(index, 1);
-          updateTagsUI();
-        });
-      }
+      const tagNameSpan = document.createElement('span');
+      tagNameSpan.textContent = tag;
+      
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.className = 'ml-1 text-blue-500 hover:text-blue-700 focus:outline-none';
+      removeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`;
+      removeButton.onclick = () => {
+        currentTagsSet.delete(tag);
+        renderTags(); // 重新渲染标签
+      };
+      
+      tagElement.appendChild(tagNameSpan);
+      tagElement.appendChild(removeButton);
+      tagsDisplayContainer.appendChild(tagElement);
     });
-    
-    // 更新隐藏输入
-    tagsInput.value = JSON.stringify(currentTags);
+    // 更新隐藏输入框的值，用于表单提交
+    tagsHiddenInput.value = JSON.stringify(Array.from(currentTagsSet));
   }
-  
-  // 添加标签事件
-  addTagButton.addEventListener('click', () => {
-    const tag = tagInput.value.trim();
-    if (tag) {
-      addTag(tag);
-      tagInput.value = '';
-      tagInput.focus();
-    }
-  });
-  
-  // 回车键添加标签
-  tagInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const tag = tagInput.value.trim();
-      if (tag) {
-        addTag(tag);
-        tagInput.value = '';
-      }
-    }
-  });
-  
-  // 图片上传处理
-  const imageUploadInput = document.getElementById('image-upload') as HTMLInputElement;
-  const contentTextArea = document.getElementById('content') as HTMLTextAreaElement;
-  const imagePreviewContainer = document.getElementById('image-preview-container') as HTMLDivElement;
 
+  function handleAddTag() {
+    const tagValue = tagInputElement.value.trim();
+    if (tagValue) {
+      currentTagsSet.add(tagValue);
+      renderTags();
+      tagInputElement.value = ''; // 清空输入框
+      tagInputElement.focus(); // 重新聚焦输入框
+    }
+  }
+
+  addTagButton.addEventListener('click', handleAddTag);
+  tagInputElement.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault(); // 防止表单因回车提交
+      handleAddTag();
+    }
+  });
+
+  // --- 图片上传处理 ---
   imageUploadInput.addEventListener('change', async (event) => {
     const files = (event.target as HTMLInputElement).files;
-    if (!files || files.length === 0) {
-      return;
-    }
+    if (!files || files.length === 0) return;
+
     const file = files[0];
     const formData = new FormData();
     formData.append('image', file);
 
-    // 清空预览
-    imagePreviewContainer.innerHTML = ''; 
-    const uploadingText = document.createElement('p');
-    uploadingText.textContent = '正在上传图片...';
-    uploadingText.className = 'text-sm text-gray-500 dark:text-gray-400';
-    imagePreviewContainer.appendChild(uploadingText);
+    imagePreviewContainer.innerHTML = ''; // 清空之前的预览和消息
+    const uploadingMsg = document.createElement('p');
+    uploadingMsg.textContent = '正在上传图片...';
+    uploadingMsg.className = 'text-sm text-gray-500 dark:text-gray-400';
+    imagePreviewContainer.appendChild(uploadingMsg);
 
     try {
-      const response = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: formData,
-      });
-
-      uploadingText.remove(); // 移除上传提示
+      const response = await fetch('/api/upload-image', { method: 'POST', body: formData });
+      uploadingMsg.remove(); // 移除“正在上传”消息
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: '上传失败，无法解析错误信息' }));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ message: '上传失败，无法解析服务器错误信息。' }));
+        throw new Error(errorData.message || `HTTP 错误: ${response.status}`);
       }
 
       const result = await response.json();
-
       if (result.success && result.imageUrl) {
         const imageName = result.imageUrl.split('/').pop() || 'image';
-        const altText = prompt('请输入图片的描述 (alt text):', imageName.split('.').shift() || 'image');
+        const altText = prompt('请输入图片的描述 (alt text):', imageName.split('.').shift() || 'image_alt_text');
         
-        // 根据用户要求修改图片路径为相对路径
+        // 注意：'../../../public' 这种路径通常用于构建时或特定服务器配置。
+        // 对于 Astro 中动态加载的 Markdown 内容，如果图片在 public 文件夹下，
+        // 通常使用相对于 public 根目录的路径，如 `/uploads/my-image.png`。
+        // 此处保留用户原有逻辑，但添加注释。
         const relativeImageUrl = `../../../public${result.imageUrl}`; 
-        const imageMarkdown = `![${altText || imageName}](${relativeImageUrl})\\n`;
+        const imageMarkdown = `![${altText || imageName}](${relativeImageUrl})\n`;
         
-        // 插入到光标位置
-        const cursorPos = contentTextArea.selectionStart;
-        const textBefore = contentTextArea.value.substring(0, cursorPos);
-        const textAfter = contentTextArea.value.substring(cursorPos);
-        contentTextArea.value = textBefore + imageMarkdown + textAfter;
+        // 将 Markdown 插入到内容文本框的光标位置
+        const cursorPos = contentBodyTextarea.selectionStart;
+        const textBefore = contentBodyTextarea.value.substring(0, cursorPos);
+        const textAfter = contentBodyTextarea.value.substring(cursorPos);
+        contentBodyTextarea.value = textBefore + imageMarkdown + textAfter;
+        contentBodyTextarea.focus(); // 重新聚焦文本框
+        contentBodyTextarea.selectionStart = contentBodyTextarea.selectionEnd = cursorPos + imageMarkdown.length; // 移动光标到插入内容后
 
-        // 显示预览
+        // 显示图片预览
         const imgPreview = document.createElement('img');
-        imgPreview.src = result.imageUrl;
+        imgPreview.src = result.imageUrl; // 预览使用API返回的原始URL
         imgPreview.alt = altText || '图片预览';
         imgPreview.className = 'max-w-xs max-h-32 mt-2 rounded border border-gray-300 dark:border-gray-600';
         imagePreviewContainer.appendChild(imgPreview);
 
         const successMsg = document.createElement('p');
         successMsg.textContent = `图片上传成功: ${result.imageUrl}`;
-        successMsg.className = 'text-sm text-green-600 dark:text-green-400';
+        successMsg.className = 'text-sm text-green-600 dark:text-green-400 mt-1';
         imagePreviewContainer.appendChild(successMsg);
 
-        // 清空文件输入，以便可以再次选择同一文件
-        imageUploadInput.value = ''; 
-
+        imageUploadInput.value = ''; // 清空文件输入，以便可以再次选择同一文件
       } else {
-        throw new Error(result.message || '图片上传成功，但未返回URL');
+        throw new Error(result.message || '图片上传成功，但未返回有效的图片URL。');
       }
     } catch (error) {
       console.error('图片上传错误:', error);
       const errorMsg = document.createElement('p');
       errorMsg.textContent = `图片上传失败: ${error instanceof Error ? error.message : String(error)}`;
-      errorMsg.className = 'text-sm text-red-600 dark:text-red-400';
+      errorMsg.className = 'text-sm text-red-600 dark:text-red-400 mt-1';
       imagePreviewContainer.appendChild(errorMsg);
     }
   });
-  
-  // 表单提交
-  const form = document.getElementById('create-form') as HTMLFormElement;
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    console.log('表单提交开始');
 
-    const contentTypeSelect = document.getElementById('content-type') as HTMLSelectElement;
-    const titleInput = document.getElementById('title') as HTMLInputElement;
-    const filenameInput = document.getElementById('filename') as HTMLInputElement;
-    const descriptionTextarea = document.getElementById('description') as HTMLTextAreaElement;
-    const categoryInput = document.getElementById('category') as HTMLInputElement;
-    const hiddenTagsInput = document.getElementById('tags') as HTMLInputElement;
-    const contentTextarea = document.getElementById('content') as HTMLTextAreaElement;
-    const draftCheckbox = document.getElementById('draft') as HTMLInputElement; // 获取 draft 复选框
+  // --- 辅助函数 ---
+  /**
+   * 根据标题生成 slug (文件名)。
+   * @param title 标题字符串
+   * @param existingSlug 用户可能已输入的 slug
+   * @returns 生成的 slug
+   */
+  function generateSlug(title: string, existingSlug: string = ''): string {
+    if (existingSlug.trim()) {
+      return existingSlug.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/\.md$/i, '');
+    }
+    if (!title) return `untitled-${Date.now()}`;
+    
+    let slug = title.toLowerCase()
+      .replace(/\s+/g, '-')      // 替换空格为连字符
+      .replace(/[^\w-]+/g, '') // 移除除单词字符和连字符外的所有字符
+      .replace(/--+/g, '-')     // 替换多个连字符为一个
+      .replace(/^-+|-+$/g, ''); // 移除开头和结尾的连字符
+    
+    return slug || `untitled-${Date.now()}`; // 如果处理后 slug 为空（例如标题全是特殊字符），则生成一个带时间戳的 slug
+  }
 
+  /**
+   * 格式化 Frontmatter 中的值，特别是处理字符串中的引号。
+   * @param value 要格式化的值
+   * @returns 格式化后的 YAML 字符串值
+   */
+  function formatFrontmatterValue(value: any, key: string): string {
+    if (key === 'date' || typeof value === 'boolean' || typeof value === 'number') {
+      return String(value); // 日期、布尔值、数字不需要引号
+    }
+    if (Array.isArray(value)) {
+      return JSON.stringify(value); // 数组使用 JSON 字符串表示
+    }
+    // 其他情况（主要是字符串），需要用双引号包裹，并转义内部的双引号
+    return `"${String(value).replace(/"/g, '\\"')}"`;
+  }
 
-    // 提取和格式化数据
+  // --- 表单提交处理 ---
+  createForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    console.log('表单提交开始...');
+
+    // 收集表单数据
     const contentType = contentTypeSelect.value;
-    const title = titleInput.value;
-    let slug = filenameInput.value.trim();
-    const description = descriptionTextarea.value;
-    const category = categoryInput.value;
-    const tagsArray = currentTags; // 使用 currentTags 数组
-    const contentBody = contentTextarea.value;
-    const isDraft = draftCheckbox.checked; // 获取 draft 状态
-    const date = new Date().toISOString();
+    const title = titleInput.value.trim();
+    const description = descriptionTextarea.value.trim();
+    const category = categoryInput.value.trim();
+    const tagsArray = Array.from(currentTagsSet); // 从 Set 获取标签数组
+    const contentBody = contentBodyTextarea.value;
+    const isDraft = draftCheckbox.checked;
+    const currentDate = new Date().toISOString(); // ISO 格式日期字符串
 
     if (!title) {
-      alert('标题不能为空');
+      alert('标题不能为空！');
+      titleInput.focus();
       return;
     }
 
-    // 如果文件名为空，则根据标题自动生成
-    if (!slug) {
-      slug = title.toLowerCase()
-                 .replace(/\s+/g, '-')      // 替换空格为连字符
-                 .replace(/[^\w-]+/g, '') // 移除特殊字符
-                 .replace(/--+/g, '-');     // 替换多个连字符为一个
-      if(!slug) slug = 'untitled-' + Date.now(); // 防止空标题或只有特殊字符的标题
-    }
-    slug = slug.replace(/\\.md$/i, ''); // 移除可能存在的.md后缀
-
+    // 生成 slug
+    const slug = generateSlug(title, filenameInput.value.trim());
 
     // 构建 frontmatter 对象
     const frontmatterData: { [key: string]: any } = {
       title: title,
-      date: date,
-      draft: isDraft, // 添加 draft 状态
+      date: currentDate, // 使用 ISO 格式
+      draft: isDraft,
     };
     if (description) frontmatterData.description = description;
     if (category) frontmatterData.category = category;
     if (tagsArray.length > 0) frontmatterData.tags = tagsArray;
-    
-    // 如果是博客类型且内容配置文件中有 image 字段，可以考虑在此处添加一个用于主图的逻辑
-    // 例如: frontmatterData.image = "/path/to/main-image.jpg"; (但这需要额外的UI和逻辑)
 
-    // 构建完整的 Markdown 内容
+    // 构建完整的 Markdown 内容（Frontmatter + 正文）
     let markdownContent = '---\n';
-    // 按指定顺序生成frontmatter字段
-    const orderedFields = ['title', 'description', 'date', 'tags', 'category', 'draft'];
+    // 预定义 frontmatter 字段顺序
+    const orderedFields = ['title', 'description', 'date', 'category', 'tags', 'draft']; 
     
     orderedFields.forEach(key => {
-      if (frontmatterData[key] !== undefined) {
-        const value = frontmatterData[key];
-        // 特殊处理日期字段，不添加引号
-        if (key === 'date') {
-          markdownContent += `${key}: ${value}\n`;
-          return;
-        }
-        
-        if (key === 'title' || key === 'description' || key === 'category') {
-          markdownContent += `${key}: "${String(value).replace(/"/g, '\\\\"')}"\\n`;
-        } else if (key === 'tags' && Array.isArray(value)) {
-          markdownContent += `${key}: ${JSON.stringify(value)}\\n`;
-        } else if (key === 'draft' && typeof value === 'boolean') {
-          markdownContent += `${key}: ${value}\\n`;
-        }
+      if (frontmatterData.hasOwnProperty(key) && frontmatterData[key] !== undefined) {
+        markdownContent += `${key}: ${formatFrontmatterValue(frontmatterData[key], key)}\n`;
       }
     });
     
-    // 处理其他可能存在的字段
+    // 添加其他不在预定义顺序中的字段 (如果有)
     for (const key in frontmatterData) {
-      if (!orderedFields.includes(key) && frontmatterData[key] !== undefined) {
-        const value = frontmatterData[key];
-        if (typeof value === 'string') {
-          markdownContent += `${key}: "${value.replace(/"/g, '\\\\"')}"\\n`;
-        } else if (value !== null && value !== undefined) {
-          markdownContent += `${key}: ${value}\\n`;
-        }
+      if (frontmatterData.hasOwnProperty(key) && !orderedFields.includes(key) && frontmatterData[key] !== undefined) {
+        markdownContent += `${key}: ${formatFrontmatterValue(frontmatterData[key], key)}\n`;
       }
     }
-    markdownContent += '---\\n\\n' + contentBody;
+    markdownContent += '---\n\n' + contentBody;
 
     const payload = {
       contentType: contentType,
       slug: slug,
-      frontmatter: markdownContent,
+      frontmatter: markdownContent, // API 接收完整的 Markdown 文本，包括 frontmatter
     };
-    console.log('准备发送的数据:', payload);
+    console.log('准备发送到 API 的数据:', payload);
 
     try {
       const response = await fetch('/api/create-content', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      console.log('API响应状态:', response.status);
+      console.log('API 响应状态:', response.status);
 
-      const responseBody = await response.text(); // 先获取文本，再尝试解析
-      console.log('API响应体 (原始):', responseBody);
+      const responseText = await response.text(); // 先获取文本，避免因非JSON响应导致解析错误
+      console.log('API 响应体 (原始文本):', responseText);
 
       if (!response.ok) {
-        let errorData = { message: `HTTP错误! 状态: ${response.status}` };
+        let errorData = { message: `HTTP 错误! 状态: ${response.status}. 响应: ${responseText}` };
         try {
-          errorData = JSON.parse(responseBody);
+          errorData = JSON.parse(responseText); // 尝试解析为 JSON
         } catch (e) {
-          console.error('无法解析错误响应JSON:', e);
-          errorData.message = responseBody || errorData.message;
+          console.warn('API 错误响应不是有效的 JSON:', e);
         }
-        console.error('API错误数据:', errorData);
-        throw new Error(errorData.message || '创建内容失败');
+        throw new Error(errorData.message || `创建内容失败，服务器返回: ${response.status}`);
       }
 
       let result;
       try {
-        result = JSON.parse(responseBody);
+        result = JSON.parse(responseText); // 解析成功的响应
       } catch (e) {
-         console.error('无法解析成功响应JSON:', e);
-         alert('内容可能已创建，但服务器响应格式不正确。');
-         // 即使无法解析JSON，如果状态码是2xx，也可能意味着操作成功了
-         // 可以尝试检查slug是否真的生成了页面
-         if (payload.slug && payload.contentType) {
-            const checkUrl = `/${payload.contentType}/${payload.slug}`;
-            console.log("尝试跳转到: ", checkUrl);
-            // 可以给用户一个提示，或者尝试跳转
-            // window.location.href = checkUrl; // 或者提示用户手动检查
-         }
-         return;
+        console.error('无法解析 API 成功响应的 JSON:', e);
+        alert('内容可能已创建，但服务器响应格式不正确。请检查控制台获取更多信息。');
+        // 即使JSON解析失败，如果状态码是2xx，可能操作已成功。
+        // 可以考虑给用户提示或尝试跳转（如果slug已知）。
+        return;
       }
-
-
-      console.log('API成功结果:', result);
+      console.log('API 成功结果:', result);
 
       if (result.success && result.url) {
         alert('内容创建成功！即将跳转...');
-        window.location.href = result.url;
+        window.location.href = result.url; // 跳转到新创建内容的页面
       } else {
-        throw new Error(result.message || '创建内容失败，但API未返回明确错误信息');
+        throw new Error(result.message || '创建内容失败，但 API 未返回明确错误信息或 URL。');
       }
     } catch (error) {
-      console.error('创建内容过程中出错:', error);
+      console.error('创建内容过程中发生错误:', error);
       alert(`创建失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   });
-  
-  // 预览功能
-  const previewBtn = document.getElementById('preview-btn') as HTMLButtonElement;
-  const previewModal = document.getElementById('preview-modal') as HTMLDivElement;
-  const closePreview = document.getElementById('close-preview') as HTMLButtonElement;
-  const previewContent = document.getElementById('preview-content') as HTMLDivElement;
-  
-  previewBtn.addEventListener('click', async () => {
-    const content = (document.getElementById('content') as HTMLTextAreaElement).value;
-    const title = (document.getElementById('title') as HTMLInputElement).value;
+
+  // --- 预览功能 ---
+  previewButton.addEventListener('click', async () => {
+    const title = titleInput.value.trim() || "无标题";
+    const content = contentBodyTextarea.value;
     
-    // 简单的预览，在实际应用中可以使用更复杂的Markdown解析
-    previewContent.innerHTML = `<h1>${title}</h1>\n${content}`;
+    // 简单的 HTML 预览，不进行完整的 Markdown 解析
+    // 若需完整 Markdown 预览，可引入 client-side Markdown 解析库 (如 marked.js)
+    // 例如: import { marked } from 'marked'; previewContentArea.innerHTML = marked.parse(...)
+    previewContentArea.innerHTML = `<h1>${title.replace(/</g, "<").replace(/>/g, ">")}</h1>\n<div>${content.replace(/</g, "<").replace(/>/g, ">").replace(/\n/g, "<br>")}</div>`; 
     previewModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // 防止背景滚动
   });
-  
-  closePreview.addEventListener('click', () => {
+
+  function closePreviewModal() {
     previewModal.classList.add('hidden');
-  });
+    document.body.style.overflow = ''; // 恢复背景滚动
+  }
+
+  closePreviewButton.addEventListener('click', closePreviewModal);
   
-  // 点击模态框外部关闭
-  previewModal.addEventListener('click', (e) => {
-    if (e.target === previewModal) {
-      previewModal.classList.add('hidden');
+  // 点击模态框外部（遮罩层）关闭预览
+  previewModal.addEventListener('click', (event) => {
+    if (event.target === previewModal) {
+      closePreviewModal();
     }
   });
+
+  // ESC键关闭预览
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !previewModal.classList.contains('hidden')) {
+      closePreviewModal();
+    }
+  });
+
+  // 初始化：渲染一次已有的标签（如果页面加载时就有）
+  renderTags();
 </script>
