@@ -122,40 +122,5 @@ export const prerender = false;
     @apply bg-gray-800 text-white p-4 rounded-md overflow-x-auto;
   }
   
-  /* KaTeX 公式样式增强 */
-  .katex-display {
-    @apply my-4 overflow-x-auto overflow-y-hidden;
-    padding: 0.5rem 0;
-  }
-  
-  .katex {
-    @apply text-lg;
-    font-size: 1.1em;
-  }
-  
-  /* 解决矩阵公式溢出问题 */
-  .katex-display > .katex {
-    @apply max-w-full;
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
-  
-  /* 确保矩阵能够正确显示 */
-  .katex .mathnormal {
-    font-family: KaTeX_Math;
-    font-style: italic;
-  }
-  
-  /* 增加对表格和矩阵的支持 */
-  .katex .array-col-align-c > .col-align-c {
-    text-align: center;
-  }
-  
-  .katex .array-col-align-l > .col-align-l {
-    text-align: left;
-  }
-  
-  .katex .array-col-align-r > .col-align-r {
-    text-align: right;
-  }
+
 </style>
