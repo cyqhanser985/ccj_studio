@@ -1,4 +1,38 @@
 @import "katex/dist/katex.min.css";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* 使用基础样式重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 设置根元素默认样式 */
+:root {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* 基础排版样式 */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+/* 引入 Tailwind 组件样式 */
+@import "tailwindcss/components";
+@import "tailwindcss/utilities.css";
+
+/* KaTeX responsive styles */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden; /* Hide vertical scrollbar if any */
+  padding: 0.5em 0; /* Add some vertical padding */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* Optional: Adjust font size for very long equations on small screens */
+/* @media (max-width: 600px) {
+  .katex-display > .katex {
+    font-size: 0.9em; 
+  }
+} */

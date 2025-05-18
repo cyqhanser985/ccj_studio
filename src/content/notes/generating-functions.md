@@ -2,7 +2,7 @@
 title: "生成函数法解组合数学问题学习笔记"
 description: "生成函数（母函数）在组合计数中的应用，OGF与EGF的理论与示例"
 date: 2025-05-11
-tags: ["数学", "组合数学", "生成函数", "OGF", "EGF"]
+tags: ["生成函数", "OGF", "EGF","母函数"]
 category: "组合数学"
 draft: false
 ---
