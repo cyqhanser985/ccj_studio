@@ -2,44 +2,47 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 
+// 设置为服务器渲染模式
+export const prerender = false;
+
 // 定义条目类型
 type BlogEntry = CollectionEntry<'blog'>;
 type NotesEntry = CollectionEntry<'notes'>;
 type ContentEntry = BlogEntry | NotesEntry;
 
-export async function getStaticPaths() {
-  // 获取所有文章和笔记
-  const blogEntries = await getCollection('blog', ({ data }) => !data.draft);
-  const notesEntries = await getCollection('notes', ({ data }) => !data.draft);
-  
-  // 合并所有内容
-  const allEntries = [...blogEntries, ...notesEntries];
-  
-  // 获取所有唯一的分类
-  const categories = [...new Set(allEntries
-    .filter(entry => entry.data.category)
-    .map(entry => entry.data.category?.toLowerCase()))] as string[];
-  
-  // 为每个分类创建路径
-  return categories.map(category => {
-    // 过滤出此分类的所有内容
-    const filteredEntries = allEntries.filter(
-      entry => entry.data.category?.toLowerCase() === category
-    );
-    
-    return {
-      params: { category },
-      props: { 
-        category, 
-        entries: filteredEntries,
-        categoryDisplay: filteredEntries[0]?.data.category || category
-      }
-    };
-  });
+// 获取URL参数
+const { category } = Astro.params;
+
+if (!category) {
+  return Astro.redirect('/404');
 }
 
-// 页面属性
-const { category, entries, categoryDisplay } = Astro.props;
+// 获取所有文章和笔记
+let blogEntries: BlogEntry[] = [];
+let notesEntries: NotesEntry[] = [];
+
+try {
+  blogEntries = await getCollection('blog', ({ data }) => !data.draft);
+  notesEntries = await getCollection('notes', ({ data }) => !data.draft);
+} catch (error) {
+  console.error('获取内容集合时出错:', error);
+}
+
+// 合并所有内容
+const allEntries = [...blogEntries, ...notesEntries];
+
+// 过滤出此分类的所有内容
+const entries = allEntries.filter(
+  entry => entry.data.category?.toLowerCase() === category.toLowerCase()
+);
+
+// 如果没有找到内容，重定向到404页面
+if (entries.length === 0) {
+  return Astro.redirect('/404');
+}
+
+// 获取原始大小写的分类名称
+const categoryDisplay = entries[0]?.data.category || category;
 
 // 按日期排序
 const sortedEntries = entries.sort((a, b) => 
@@ -103,4 +106,4 @@ function formatDate(date: Date): string {
       })}
     </div>
   </div>
-</Layout> 
+</Layout>
