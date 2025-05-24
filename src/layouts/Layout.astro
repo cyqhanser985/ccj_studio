@@ -5,6 +5,7 @@ const { title } = Astro.props;
 
 // 活动页面路径
 const currentPath = Astro.url.pathname;
+// const siteTitle = "CCJ Studio"; // Removed as it was unused
 ---
 <!doctype html>
 <html lang="zh-CN" class="light">
@@ -86,16 +87,6 @@ const currentPath = Astro.url.pathname;
               >
                 关于
               </a>
-              
-              <!-- 开发者模式只在激活后显示 -->
-              <div id="dev-menu-items" class="hidden">
-                <a 
-                  href="/create" 
-                  class="ml-2 px-3 py-2 bg-green-600 hover:bg-green-700 rounded-md text-white transition-colors"
-                >
-                  创建内容
-                </a>
-              </div>
             </nav>
             
             <!-- 移动端菜单按钮 -->
@@ -156,43 +147,10 @@ const currentPath = Astro.url.pathname;
             >
               关于
             </a>
-            
-            <!-- 开发者模式移动端选项，默认隐藏 -->
-            <div id="mobile-dev-menu-items" class="hidden">
-              <a 
-                href="/create" 
-                class="block py-2 px-4 mt-2 bg-green-600 hover:bg-green-700 rounded-md text-white"
-              >
-                创建内容
-              </a>
-            </div>
           </nav>
         </div>
       </div>
     </header>
-    
-    <!-- 开发者模式密码输入模态框 -->
-    <div id="dev-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-      <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold text-gray-900 dark:text-white">开发者模式验证</h2>
-          <button id="close-dev-modal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div class="mb-4">
-          <label for="dev-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">请输入开发者密码</label>
-          <input type="password" id="dev-password" class="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500">
-        </div>
-        <div class="flex justify-end">
-          <button id="verify-dev-password" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-            验证
-          </button>
-        </div>
-      </div>
-    </div>
     
     <main class="flex-grow container mx-auto p-6">
       <slot />
@@ -208,15 +166,14 @@ const currentPath = Astro.url.pathname;
             <a href="/blog" class="hover:text-blue-300">博客</a>
             <a href="/notes" class="hover:text-blue-300">笔记</a>
             <a href="/vocabulary" class="hover:text-blue-300">单词</a>
-            <button id="exit-dev-mode" class="hover:text-blue-300 hidden">退出开发者模式</button>
           </div>
         </div>
       </div>
     </footer>
     
     <!-- KaTeX支持脚本 - 帮助处理复杂公式 -->
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" integrity="sha384-cpW21h6RZv/phavutF+AuVYrr+dA8xD9zs6FwLpaCct6O9ctzYFfFr4dgmgccOTx" crossorigin="anonymous"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
+    <script is:inline defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" integrity="sha384-cpW21h6RZv/phavutF+AuVYrr+dA8xD9zs6FwLpaCct6O9ctzYFfFr4dgmgccOTx" crossorigin="anonymous"></script>
+    <script is:inline defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"
         onload="renderMathInElement(document.body);"></script>
 
     <!-- 暗黑模式切换脚本 -->
@@ -252,132 +209,6 @@ const currentPath = Astro.url.pathname;
       if (mobileMenuToggle && mobileMenu) {
         mobileMenuToggle.addEventListener('click', function() {
           mobileMenu.classList.toggle('hidden');
-        });
-      }
-      
-      // 开发者模式逻辑
-      const devPassword = "Cyq20060804";
-      const devModal = document.getElementById('dev-modal');
-      const devPasswordInput = document.getElementById('dev-password') as HTMLInputElement;
-      const verifyDevPasswordBtn = document.getElementById('verify-dev-password');
-      const closeDevModalBtn = document.getElementById('close-dev-modal');
-      const exitDevModeBtn = document.getElementById('exit-dev-mode');
-      const devAddWordButton = document.getElementById('dev-add-word-button');
-      
-      // 开发者功能配置
-      interface DevFeature {
-        id: string; // DOM 元素的 ID
-        requiresDevMode: boolean; // 是否仅在开发者模式下显示
-      }
-
-      const devFeatures: DevFeature[] = [
-        { id: 'dev-menu-items', requiresDevMode: true }, // 创建内容按钮的容器
-        { id: 'mobile-dev-menu-items', requiresDevMode: true }, // 移动端创建内容按钮的容器
-        { id: 'dev-add-word-button', requiresDevMode: true }, // 添加单词按钮的容器
-        { id: 'exit-dev-mode', requiresDevMode: true } // 退出开发者模式按钮
-      ];
-
-      // 默认关闭开发者模式
-      localStorage.removeItem('dev_mode_active');
-      
-      // 检查是否已激活开发者模式
-      let isDevMode = localStorage.getItem('dev_mode_active') === 'true';
-      if (isDevMode) {
-        showDevModeItems();
-      }
-      
-      // 监听快捷键
-      document.addEventListener('keydown', function(e) {
-        // 检测Ctrl+F1
-        if (e.ctrlKey && e.key === 'F1') {
-          e.preventDefault();
-          showDevModal();
-        }
-      });
-      
-      // 显示开发者模式验证框
-      function showDevModal() {
-        if (devModal) {
-          devModal.classList.remove('hidden');
-          if (devPasswordInput) {
-            devPasswordInput.value = '';
-            devPasswordInput.focus();
-          }
-        }
-      }
-      
-      // 显示开发者模式菜单项
-      function showDevModeItems() {
-        devFeatures.forEach(feature => {
-          if (feature.requiresDevMode) {
-            const element = document.getElementById(feature.id);
-            if (element) element.classList.remove('hidden');
-          }
-        });
-      }
-      
-      // 隐藏开发者模式菜单项
-      function hideDevModeItems() {
-        devFeatures.forEach(feature => {
-          if (feature.requiresDevMode) {
-            const element = document.getElementById(feature.id);
-            if (element) element.classList.add('hidden');
-          }
-        });
-      }
-      
-      // 验证开发者密码
-      if (verifyDevPasswordBtn) {
-        verifyDevPasswordBtn.addEventListener('click', verifyPassword);
-      }
-      
-      if (devPasswordInput) {
-        devPasswordInput.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            verifyPassword();
-          }
-        });
-      }
-      
-      function verifyPassword() {
-        if (devPasswordInput && devPasswordInput.value === devPassword) {
-          isDevMode = true;
-          localStorage.setItem('dev_mode_active', 'true');
-          showDevModeItems();
-          closeDevModal();
-        } else {
-          alert('密码错误，请重试！');
-          if (devPasswordInput) devPasswordInput.value = '';
-        }
-      }
-      
-      // 退出开发者模式
-      if (exitDevModeBtn) {
-        exitDevModeBtn.addEventListener('click', function() {
-          isDevMode = false;
-          localStorage.removeItem('dev_mode_active');
-          hideDevModeItems();
-        });
-      }
-      
-      // 关闭开发者模式验证框
-      function closeDevModal() {
-        if (devModal) {
-          devModal.classList.add('hidden');
-        }
-      }
-      
-      if (closeDevModalBtn) {
-        closeDevModalBtn.addEventListener('click', closeDevModal);
-      }
-      
-      // 点击模态框外部关闭
-      if (devModal) {
-        devModal.addEventListener('click', function(e) {
-          if (e.target === devModal) {
-            closeDevModal();
-          }
         });
       }
       
@@ -421,6 +252,15 @@ const currentPath = Astro.url.pathname;
           });
         }
       }
+    </script>
+    <script is:inline>
+      // 监听快捷键 (Ctrl + F1 to /developer)
+      document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'F1') {
+          e.preventDefault();
+          window.location.href = '/developer';
+        }
+      });
     </script>
   </body>
 </html>

@@ -1,10 +1,9 @@
 ---
-import { getCollection, getEntry, type CollectionEntry } from 'astro:content';
-import Layout from '../../layouts/Layout.astro';
+import { getEntry, type CollectionEntry } from 'astro:content';
+import BlogPostLayout from '../../layouts/BlogPostLayout.astro';
 
-// 定义博客条目的类型
-type BlogEntry = CollectionEntry<'blog'>;
-type BlogData = BlogEntry['data'];
+export type BlogEntry = CollectionEntry<'blog'>;
+// type BlogData = BlogEntry['data']; // Unused
 
 // 在服务器模式下，我们不使用getStaticPaths
 // 而是在每个请求中直接获取内容
@@ -48,7 +47,7 @@ const formattedDate = new Date(entry.data.date).toLocaleDateString('zh-CN', {
 export const prerender = false;
 ---
 
-<Layout title={entry.data.title}>
+<BlogPostLayout title={entry.data.title}>
   <article class="max-w-3xl mx-auto">
     <div class="mb-8">
       <h1 class="text-3xl md:text-4xl font-bold mb-2">{entry.data.title}</h1>
@@ -82,7 +81,7 @@ export const prerender = false;
       <Content />
     </div>
   </article>
-</Layout>
+</BlogPostLayout>
 
 <style is:global>
   /* KaTeX 样式已通过 global.css 引入 */

@@ -34,13 +34,15 @@ const allTags = blogEntries.flatMap((entry: BlogEntry) => entry.data.tags || [])
 const uniqueTags = [...new Set(allTags)].slice(0, 20); // 只显示前20个标签
 
 // 格式化日期的函数
+/*
 function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString('zh-CN', {
+  return date.toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   });
 }
+*/
 ---
 
 <Layout title="博客文章">

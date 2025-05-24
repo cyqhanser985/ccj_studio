@@ -9,14 +9,16 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.4",
     "@astrojs/markdown-remark": "^6.3.1",
-    "@astrojs/netlify": "^6.3.2",
-    "astro": "^5.7.12",
+    "@astrojs/netlify": "^6.3.4",
+    "astro": "^5.8.0",
     "fuse.js": "^7.0.0",
     "katex": "^0.16.22",
     "rehype-katex": "^7.0.1",
     "rehype-pretty-code": "^0.14.1",
     "remark-math": "^6.0.0",
+    "typescript": "^5.8.3",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

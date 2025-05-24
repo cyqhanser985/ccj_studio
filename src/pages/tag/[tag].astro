@@ -5,10 +5,9 @@ import Layout from '../../layouts/Layout.astro';
 // 设置为服务器渲染模式
 export const prerender = false;
 
-// 定义条目类型，使类型更明确
-type BlogEntry = CollectionEntry<'blog'>;
-type NotesEntry = CollectionEntry<'notes'>;
-type ContentEntry = BlogEntry | NotesEntry;
+export type BlogEntry = CollectionEntry<'blog'>;
+export type NotesEntry = CollectionEntry<'notes'>;
+// type ContentEntry = BlogEntry | NotesEntry; // Unused
 
 // 获取URL参数
 const { tag } = Astro.params;

@@ -1,9 +1,6 @@
 ---
-import { getCollection, getEntry, type CollectionEntry } from 'astro:content';
-import Layout from '../../layouts/Layout.astro';
-
-// 定义笔记条目的类型
-type NotesEntry = CollectionEntry<'notes'>;
+import { getEntry, type CollectionEntry } from 'astro:content';
+import NotesPostLayout from '../../layouts/NotesPostLayout.astro';
 
 // 在服务器模式下，我们不使用getStaticPaths
 // 而是在每个请求中直接获取内容
@@ -47,7 +44,7 @@ const formattedDate = new Date(entry.data.date).toLocaleDateString('zh-CN', {
 export const prerender = false;
 ---
 
-<Layout title={entry.data.title}>
+<NotesPostLayout title={entry.data.title}>
   <article class="max-w-3xl mx-auto">
     <div class="mb-6 pb-4 border-b border-gray-200">
       <h1 class="text-3xl font-bold mb-2">{entry.data.title}</h1>
@@ -81,7 +78,7 @@ export const prerender = false;
       <Content />
     </div>
   </article>
-</Layout>
+</NotesPostLayout>
 
 <style is:global>
   /* 笔记内容样式与博客略有不同 */
