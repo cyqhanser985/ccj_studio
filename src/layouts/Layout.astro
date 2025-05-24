@@ -261,10 +261,22 @@ const currentPath = Astro.url.pathname;
       const devPasswordInput = document.getElementById('dev-password') as HTMLInputElement;
       const verifyDevPasswordBtn = document.getElementById('verify-dev-password');
       const closeDevModalBtn = document.getElementById('close-dev-modal');
-      const devMenuItems = document.getElementById('dev-menu-items');
-      const mobileDevMenuItems = document.getElementById('mobile-dev-menu-items');
       const exitDevModeBtn = document.getElementById('exit-dev-mode');
+      const devAddWordButton = document.getElementById('dev-add-word-button');
       
+      // 开发者功能配置
+      interface DevFeature {
+        id: string; // DOM 元素的 ID
+        requiresDevMode: boolean; // 是否仅在开发者模式下显示
+      }
+
+      const devFeatures: DevFeature[] = [
+        { id: 'dev-menu-items', requiresDevMode: true }, // 创建内容按钮的容器
+        { id: 'mobile-dev-menu-items', requiresDevMode: true }, // 移动端创建内容按钮的容器
+        { id: 'dev-add-word-button', requiresDevMode: true }, // 添加单词按钮的容器
+        { id: 'exit-dev-mode', requiresDevMode: true } // 退出开发者模式按钮
+      ];
+
       // 默认关闭开发者模式
       localStorage.removeItem('dev_mode_active');
       
@@ -296,16 +308,22 @@ const currentPath = Astro.url.pathname;
       
       // 显示开发者模式菜单项
       function showDevModeItems() {
-        if (devMenuItems) devMenuItems.classList.remove('hidden');
-        if (mobileDevMenuItems) mobileDevMenuItems.classList.remove('hidden');
-        if (exitDevModeBtn) exitDevModeBtn.classList.remove('hidden');
+        devFeatures.forEach(feature => {
+          if (feature.requiresDevMode) {
+            const element = document.getElementById(feature.id);
+            if (element) element.classList.remove('hidden');
+          }
+        });
       }
       
       // 隐藏开发者模式菜单项
       function hideDevModeItems() {
-        if (devMenuItems) devMenuItems.classList.add('hidden');
-        if (mobileDevMenuItems) mobileDevMenuItems.classList.add('hidden');
-        if (exitDevModeBtn) exitDevModeBtn.classList.add('hidden');
+        devFeatures.forEach(feature => {
+          if (feature.requiresDevMode) {
+            const element = document.getElementById(feature.id);
+            if (element) element.classList.add('hidden');
+          }
+        });
       }
       
       // 验证开发者密码

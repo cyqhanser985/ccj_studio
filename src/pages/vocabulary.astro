@@ -28,17 +28,16 @@ const vocabularyEntries = renderedEntries
   <div class="max-w-4xl mx-auto py-8 px-4">
     <div class="flex justify-between items-center mb-8">
       <h1 class="text-4xl font-bold text-gray-900 dark:text-white">单词卡片</h1>
-      <a href="/admin" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-        添加单词
-      </a>
+      <div id="dev-add-word-button" class="hidden">
+        <a href="/admin#add-word-form" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+          添加单词
+        </a>
+      </div>
     </div>
 
     {vocabularyEntries.length === 0 ? (
       <div class="text-center py-12">
         <p class="text-gray-600 dark:text-gray-400 mb-4">还没有添加任何单词。</p>
-        <a href="/admin" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-          去添加单词
-        </a>
       </div>
     ) : (
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
