@@ -1,6 +1,6 @@
 ---
 import { getEntry, type CollectionEntry } from 'astro:content';
-import BlogPostLayout from '../../layouts/BlogPostLayout.astro';
+import BlogPostLayout from '../../layouts/Layout.astro';
 
 export type BlogEntry = CollectionEntry<'blog'>;
 // type BlogData = BlogEntry['data']; // Unused
@@ -82,9 +82,11 @@ export const prerender = false;
     </div>
   </article>
 </BlogPostLayout>
-
 <style is:global>
-  /* KaTeX 样式已通过 global.css 引入 */
+  @import "katex/dist/katex.min.css";
+  @import "tailwindcss/components";
+  @import "tailwindcss/utilities.css";
+  /* 其他 CSS 规则再写在下面 */
   
   /* 文章内容样式 */
   .prose h1 {
