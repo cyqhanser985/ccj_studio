@@ -1,9 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-// 从 toolbar.config.ts 导入 mainToolbarConfig (值)
 import { mainToolbarConfig } from '../config/toolbar.config';
-// 导入类型定义，包括新定义的 ActionKeyType
-import type { ToolbarConfig, ToolbarButtonConfig, ActionKeyType } from '../config/toolbar.config';
 
 const pageTitle: string = "开发者后台";
 
@@ -40,7 +37,7 @@ const toolbarConfigJsonString: string = JSON.stringify(mainToolbarConfig);
     </div>
     <button id="developer-login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-150">
       进入开发者模式
-    </button>
+    </button>    
     <p id="developer-error-msg" class="mt-3 text-red-500 text-sm text-center"></p>
     <div class="mt-6 p-4 bg-gray-100 dark:bg-gray-700 rounded-md">
       <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">快捷键提示</h3>
@@ -64,32 +61,24 @@ const toolbarConfigJsonString: string = JSON.stringify(mainToolbarConfig);
   </div>
 
   <script>
-    // JSDoc 类型声明，用于在客户端脚本中提供类型提示和检查
-    // @type {import(...) 可以让 VSCode 从外部文件读取类型定义
-    // 使用 JSDoc @typedef 来定义类型别名，方便在脚本中使用
-    /** @typedef {import('../config/toolbar.config').ToolbarConfig} ClientToolbarConfig */
-    /** @typedef {import('../config/toolbar.config').ToolbarButtonConfig} ClientToolbarButtonConfig */
-    /** @typedef {import('../config/toolbar.config').ActionKeyType} ClientActionKeyType */
+    import type { ToolbarConfig, ToolbarButtonConfig, ActionKeyType } from '../config/toolbar.config';
 
-    /** @type {ClientToolbarConfig} */
-    let currentToolbarConfig = { leftButtons: [], rightButtons: [] }; // 初始化并提供明确类型
+    let currentToolbarConfig: ToolbarConfig = { leftButtons: [], rightButtons: [] };
 
     const dataContainer = document.getElementById('developer-data-container');
     let passed_dev_password = "";
 
     if (dataContainer) {
         passed_dev_password = JSON.parse(dataContainer.dataset.password || '""');
-        // 将解析后的数据赋值给 currentToolbarConfig，并使用类型断言
         currentToolbarConfig = JSON.parse(
             dataContainer.dataset.toolbarConfig || '{ "leftButtons": [], "rightButtons": [] }'
-        ) as ClientToolbarConfig;
+        ) as ToolbarConfig; // Assert type after parsing
     } else {
         console.error("Developer data container not found!");
     }
 
     const loginPanel = document.getElementById('developer-login-panel');
     const mainContent = document.getElementById('developer-main-content');
-    const passwordInput = document.getElementById('developer-password-input'); // 类型将在使用时通过 instanceof 守卫
     const loginBtn = document.getElementById('developer-login-btn');
     const errorMsg = document.getElementById('developer-error-msg');
 
@@ -97,9 +86,7 @@ const toolbarConfigJsonString: string = JSON.stringify(mainToolbarConfig);
     const toolbarLeftButtonsContainer = document.getElementById('toolbar-left-buttons');
     const toolbarRightButtonsContainer = document.getElementById('toolbar-right-buttons');
 
-    // 使用 Record 类型来明确 toolbarActions 的键和值类型
-    /** @type {Record<ClientActionKeyType, () => void>} */
-    const toolbarActions = {
+    const toolbarActions: Record<ActionKeyType, () => void> = {
         loadCreateContentPage,
         loadAddWordPage,
         handleLogout
@@ -110,14 +97,14 @@ const toolbarConfigJsonString: string = JSON.stringify(mainToolbarConfig);
 
         toolbarLeftButtonsContainer.innerHTML = '<span class="text-lg font-semibold">开发者工具</span>';
         currentToolbarConfig.leftButtons.forEach(
-          (buttonConfig: ClientToolbarButtonConfig) => { //显式类型注解
+          (buttonConfig: ToolbarButtonConfig) => { // Explicitly type here for clarity, though often inferred
             const button = createToolbarButton(buttonConfig);
             toolbarLeftButtonsContainer.appendChild(button);
         });
 
         toolbarRightButtonsContainer.innerHTML = '';
         currentToolbarConfig.rightButtons.forEach(
-          (buttonConfig: ClientToolbarButtonConfig) => { //显式类型注解
+          (buttonConfig: ToolbarButtonConfig) => { // Explicitly type here
             const button = createToolbarButton(buttonConfig);
             toolbarRightButtonsContainer.appendChild(button);
         });
@@ -125,10 +112,10 @@ const toolbarConfigJsonString: string = JSON.stringify(mainToolbarConfig);
 
     /**
      * 创建一个工具栏按钮。
-     * @param {ClientToolbarButtonConfig} config - 按钮配置对象。
-     * @returns {HTMLButtonElement} 创建的按钮元素。
+     * @param config - 按钮配置对象。
+     * @returns 创建的按钮元素。
      */
-    function createToolbarButton(config: ClientToolbarButtonConfig): HTMLButtonElement { // 显式类型注解
+    function createToolbarButton(config: ToolbarButtonConfig): HTMLButtonElement {
         const button = document.createElement('button');
         button.id = config.id;
         button.textContent = config.text;
@@ -138,8 +125,8 @@ const toolbarConfigJsonString: string = JSON.stringify(mainToolbarConfig);
         if (config.icon) {
             button.innerHTML = `${config.icon} ${config.text}`;
         }
-
-        const actionFunction = toolbarActions[config.actionKey]; // config.actionKey 现在类型正确
+        
+        const actionFunction = toolbarActions[config.actionKey];
 
         if (actionFunction && typeof actionFunction === 'function') {
             button.addEventListener('click', () => {
@@ -171,10 +158,10 @@ const toolbarConfigJsonString: string = JSON.stringify(mainToolbarConfig);
     }
 
     function handleLogin() {
-      const currentPasswordInput = document.getElementById('developer-password-input');
-      if (!(currentPasswordInput instanceof HTMLInputElement)) return; // 类型守卫
+      const passwordInputElement = document.getElementById('developer-password-input');
+      if (!(passwordInputElement instanceof HTMLInputElement)) return; 
 
-      if (currentPasswordInput.value === passed_dev_password) {
+      if (passwordInputElement.value === passed_dev_password) {
         localStorage.setItem('dev_mode_active', 'true');
         if (errorMsg) errorMsg.textContent = '';
 
@@ -183,12 +170,12 @@ const toolbarConfigJsonString: string = JSON.stringify(mainToolbarConfig);
 
         if (loginPanel) {
             loginPanel.addEventListener('animationend', () => {
-                if (!loginPanel) return;
+                if (!loginPanel) return; 
                 loginPanel.classList.add('hidden');
                 loginPanel.classList.remove('animate-fadeOut');
                 if (mainContent) {
                     mainContent.classList.remove('hidden');
-                    mainContent.classList.remove('animate-fadeIn');
+                    mainContent.classList.remove('animate-fadeIn'); 
                 }
                 renderToolbar();
                 loadInitialContent();
@@ -196,12 +183,12 @@ const toolbarConfigJsonString: string = JSON.stringify(mainToolbarConfig);
         }
       } else {
         if (errorMsg) errorMsg.textContent = '密码错误，请重试！';
-        currentPasswordInput.value = '';
-        currentPasswordInput.focus();
+        passwordInputElement.value = '';
+        passwordInputElement.focus();
         if (loginPanel) {
             loginPanel.classList.add('animate-shake');
             loginPanel.addEventListener('animationend', () => {
-                if (!loginPanel) return;
+                if (!loginPanel) return; 
                 loginPanel.classList.remove('animate-shake');
             }, { once: true });
         }
@@ -255,9 +242,9 @@ const toolbarConfigJsonString: string = JSON.stringify(mainToolbarConfig);
 
     /**
      * 处理添加新词汇表单的提交。
-     * @param {SubmitEvent} event - 提交事件对象
+     * @param event - 提交事件对象
      */
-    async function handleDevAddVocabularySubmit(event: SubmitEvent) { // 显式类型注解
+    async function handleDevAddVocabularySubmit(event: Event) { // Type event as Event or SubmitEvent
       event.preventDefault();
       const form = event.target;
       if (!(form instanceof HTMLFormElement)) return;
@@ -265,7 +252,7 @@ const toolbarConfigJsonString: string = JSON.stringify(mainToolbarConfig);
       const formData = new FormData(form);
       const word = formData.get('word');
       const markdownContent = formData.get('markdownContent');
-      const draft = formData.has('draft');
+      const draft = formData.has('draft'); 
 
       if (typeof word !== 'string' || !word.trim() || typeof markdownContent !== 'string' || !markdownContent.trim()) {
         alert('单词和 Markdown 内容不能为空！');
@@ -289,7 +276,7 @@ const toolbarConfigJsonString: string = JSON.stringify(mainToolbarConfig);
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
+            const errorText = await response.text(); 
             throw new Error(`Server error: ${response.status} ${response.statusText}. ${errorText}`);
         }
 
@@ -315,7 +302,7 @@ const toolbarConfigJsonString: string = JSON.stringify(mainToolbarConfig);
         } else if (lastView === 'createContent') {
             loadCreateContentPage();
         } else {
-            if (developerPageContent) {
+            if (developerPageContent) { 
                 developerPageContent.innerHTML =
                     '<h2 class="text-2xl font-bold text-gray-900 dark:text-white">欢迎来到开发者后台</h2>' +
                     '<p class="text-gray-700 dark:text-gray-300">请从上方工具栏选择一个操作。</p>';
@@ -326,9 +313,9 @@ const toolbarConfigJsonString: string = JSON.stringify(mainToolbarConfig);
     if (loginBtn) {
         loginBtn.addEventListener('click', handleLogin);
     }
-    const currentPasswordInputOnLoad = document.getElementById('developer-password-input');
-    if (currentPasswordInputOnLoad instanceof HTMLInputElement) {
-        currentPasswordInputOnLoad.addEventListener('keypress', (e: KeyboardEvent) => { // 显式类型注解
+    const passwordFieldForEnterKey = document.getElementById('developer-password-input');
+    if (passwordFieldForEnterKey instanceof HTMLInputElement) {
+        passwordFieldForEnterKey.addEventListener('keypress', (e: KeyboardEvent) => { // Type 'e' as KeyboardEvent
             if (e.key === 'Enter') {
                 handleLogin();
             }
