@@ -2,25 +2,24 @@
 import Layout from '../layouts/Layout.astro';
 import { getCollection, type CollectionEntry } from 'astro:content';
 
-// 获取所有非草稿的单词条目，并按日期降序排列
-// 获取并预处理词汇数据
+// 获取所有非草稿的单词条目
 const rawEntries = await getCollection('vocabulary');
 
-// 提前渲染所有条目内容
-const renderedEntries = await Promise.all(
+// 提前渲染所有条目内容并准备数据
+const processedEntries = await Promise.all(
   rawEntries
     .filter(entry => !entry.data.draft)
     .map(async (entry: CollectionEntry<'vocabulary'>) => {
-      const rendered = await entry.render();
+      const { Content } = await entry.render(); // 获取渲染后的 Content 组件
       return {
-        ...entry,
-        Content: (rendered as { Content: any }).Content
+        ...entry, // 展开原始 entry 的所有属性
+        Content: Content // 添加/覆盖 Content 属性
       };
     })
 );
 
-// 按日期排序最终结果
-const vocabularyEntries = renderedEntries
+// 按日期降序排列最终结果
+const vocabularyEntries = processedEntries
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
 
@@ -37,13 +36,13 @@ const vocabularyEntries = renderedEntries
     ) : (
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {vocabularyEntries.map((entry) => {
-          const { Content } = entry;
+          const { Content } = entry; // 正确获取 Content 组件
           return (
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition-transform hover:scale-105">
               <div class="p-6">
                 <h2 class="text-2xl font-semibold mb-3 text-blue-600 dark:text-blue-400">{entry.data.word}</h2>
                 <div class="prose prose-sm dark:prose-invert max-w-none">
-                  <Content />
+                  <Content /> {/* 渲染组件 */}
                 </div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-4">添加日期: {entry.data.date.toLocaleDateString()}</p>
               </div>

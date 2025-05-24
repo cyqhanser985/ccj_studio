@@ -25,19 +25,19 @@ const notesCollection = defineCollection({
   }),
 });
 
-// // 定义单词集合的模式
-// const vocabularyCollection = defineCollection({
-//   schema: z.object({
-//     word: z.string(), // 单词本身
-//     date: z.date(), // 添加日期
-//     draft: z.boolean().default(false), // 是否为草稿
-//     // Markdown 内容将作为词条的详细解释
-//   }),
-// });
+// 定义词汇集合的模式
+const vocabularyCollection = defineCollection({
+  type: 'content', // 或 'data'
+  schema: z.object({
+    word: z.string(), // 假设词汇条目有一个 'word' 字段
+    date: z.date(), // 假设词汇条目有一个 'date' 字段
+    draft: z.boolean().default(false), // 假设词汇条目有一个 'draft' 字段
+    // 根据你的实际 frontmatter 添加其他字段
+  }),
+});
 
-// 导出集合
 export const collections = {
   'blog': blogCollection,
   'notes': notesCollection,
-  // 'vocabulary': vocabularyCollection, // 移除单词集合
+  'vocabulary': vocabularyCollection, // 添加词汇集合
 };
