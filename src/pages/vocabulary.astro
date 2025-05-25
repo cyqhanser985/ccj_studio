@@ -3,13 +3,13 @@ import Layout from '../layouts/Layout.astro';
 import { getCollection, type CollectionEntry } from 'astro:content';
 import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
 
-// 定义处理后条目的类型
+// Define processed entry type
 type ProcessedVocabularyEntry = CollectionEntry<'vocabulary'> & { Content: AstroComponentFactory };
 
-// 获取所有非草稿的单词条目
+// Get all non-draft vocabulary entries
 const rawEntries = await getCollection('vocabulary');
 
-// 提前渲染所有条目内容并准备数据
+// Pre-render content and prepare data
 const processedEntries = await Promise.all(
   rawEntries
     .filter(entry => !entry.data.draft)
@@ -22,11 +22,11 @@ const processedEntries = await Promise.all(
     })
 );
 
-// 按日期降序排列最终结果
+// Sort entries by date descending
 const vocabularyEntries: ProcessedVocabularyEntry[] = (processedEntries as ProcessedVocabularyEntry[])
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
-// 为客户端准备的数据 (不包含 Content 组件，只包含元数据)
+// Data for client-side (metadata only)
 const clientVocabularyData = vocabularyEntries.map(entry => ({
   id: entry.id,
   word: entry.data.word,
@@ -36,13 +36,9 @@ const clientVocabularyData = vocabularyEntries.map(entry => ({
 ---
 
 <Layout title="单词学习">
-  <div class="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8"> {/* 稍微加宽最大宽度和边距 */}
-    <div class="flex justify-between items-center mb-10"> {/* 增加底部间距 */}
+  <div class="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center mb-10">
       <h1 class="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl">单词卡片</h1>
-      {/* 可以考虑在这里添加一个 "添加新单词" 的按钮 */}
-      {/* <a href="/admin/vocabulary/new" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-        添加新单词
-      </a> */}
     </div>
 
     {vocabularyEntries.length === 0 ? (
@@ -54,7 +50,7 @@ const clientVocabularyData = vocabularyEntries.map(entry => ({
         <p class="mt-2 text-base text-gray-500 dark:text-gray-400">开始添加你的第一个单词卡片吧！</p>
       </div>
     ) : (
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8"> {/* 调整 gap */}
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8">
         {vocabularyEntries.map((entry: ProcessedVocabularyEntry, index: number) => (
           <>
             <button
@@ -69,6 +65,7 @@ const clientVocabularyData = vocabularyEntries.map(entry => ({
                 {new Date(entry.data.date).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
             </button>
+            {/* Hidden content, to be injected into modal */}
             <div id={`content-for-${index}`} class="hidden">
               <entry.Content />
             </div>
@@ -79,6 +76,13 @@ const clientVocabularyData = vocabularyEntries.map(entry => ({
   </div>
 
   {/* Modal Structure */}
+  {/* 
+    Layout Optimization: Centering & Margins
+    - The modal (#vocabularyModal) uses `fixed inset-0 flex items-center justify-center` which handles centering on the screen.
+    - `p-4` on #vocabularyModal provides screen edge spacing for the modal itself.
+    - The modal content container (#modalContentContainer) has `max-w-3xl lg:max-w-4xl` to control its width and intrinsic horizontal margins (mx-auto effectively, due to parent flex centering).
+    - Internal padding on #modalContentContainer (p-5 for header, p-6 for body, p-4 for footer) provides visual balance for the content *within* the card.
+  */}
   <div 
     id="vocabularyModal" 
     class="fixed inset-0 bg-black/75 hidden items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out opacity-0"
@@ -103,8 +107,15 @@ const clientVocabularyData = vocabularyEntries.map(entry => ({
           </svg>
         </button>
       </div>
+      {/* 
+        Markdown Style Optimization:
+        - `prose` and `dark:prose-invert` classes from @tailwindcss/typography are applied.
+        - `max-w-none` ensures prose content uses the full width of this container.
+        - Custom styles in the <style> block below further refine typography for this specific modal.
+        - `p-6` provides padding around the content. Could be increased if more "internal margin" is desired.
+      */}
       <div id="modalBody" class="p-6 prose dark:prose-invert max-w-none overflow-y-auto flex-grow">
-        {/* Content will be injected here */}
+        {/* Content will be injected here by JavaScript */}
       </div>
       <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 rounded-b-lg">
         <p id="modalDate" class="text-sm text-gray-600 dark:text-gray-400"></p>
@@ -114,34 +125,116 @@ const clientVocabularyData = vocabularyEntries.map(entry => ({
 </Layout>
 
 <style>
-  /* 基本的Prose样式调整 */
-  .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
-    margin-top: 0.5em;
+  /* 
+    SECTION: Markdown Content Style Optimizations for Vocabulary Modal
+    File: vocabulary.astro
+    Scope: Styles applied to the #modalBody when it contains .prose content.
+    -------------------------------------------------------------------------
+    These styles aim to enhance readability and visual comfort of Markdown content
+    within the vocabulary learning cards. They leverage and override defaults 
+    from the @tailwindcss/typography plugin.
+  */
+
+  /* 
+    Target: #modalBody with .prose class
+    Intent: 
+      1. Increase the base font size for better readability on desktop screens.
+         This size is inherited by child elements like <p>, <li>, and acts as
+         a base for scaling headings.
+      2. Set a generous line height for improved intra-paragraph readability (段内行间距).
+         This helps with tracking lines of text, especially for longer sentences.
+  */
+  #modalBody.prose {
+    font-size: 1.125rem; /* Sets base font to 18px (if HTML root is 16px). Equivalent to Tailwind's `text-lg` or `prose-lg` base. */
+    line-height: 1.8;    /* Increases spacing between lines within the same paragraph. */
+  }
+
+  /*
+    Target: Paragraphs within the styled modal body
+    Intent: 
+      1. Define clearer spacing between paragraphs (段落间距).
+         Ensures distinct separation between blocks of text, improving overall structure.
+      2. Maintain consistent line height within paragraphs (inherited from #modalBody.prose).
+    Note: 
+      - The original `margin-bottom: 1.75em;` was quite generous. `1.5em` is also ample.
+        Adjust this value based on visual preference for "更宽阔的间距".
+      - `margin-top` is also added for consistency, though the typography plugin often handles
+        spacing between elements (e.g., heading followed by paragraph) intelligently.
+  */
+  #modalBody.prose p {
+    margin-top: 1em; 
+    margin-bottom: 1.5em; /* Defines the space after each paragraph. */
+    /* line-height is inherited from #modalBody.prose, no need to redeclare unless different. */
+  }
+
+  /*
+    Target: Headings (h1-h6) within the styled modal body
+    Intent: 
+      Refine vertical spacing around headings to ensure they are clearly
+      associated with their subsequent content and distinct from preceding content.
+    Note: 
+      - The @tailwindcss/typography plugin provides default heading margins. 
+        These are overrides for more specific control if defaults are insufficient.
+      - The original file had more specific (and somewhat inconsistent) margins.
+        These are slightly more harmonized.
+  */
+  #modalBody.prose h1,
+  #modalBody.prose h2,
+  #modalBody.prose h3,
+  #modalBody.prose h4,
+  #modalBody.prose h5,
+  #modalBody.prose h6 {
+    margin-top: 1.6em;    /* Increased top margin for better separation from previous content. */
+    margin-bottom: 0.6em; /* Standardized bottom margin for headings. */
+  }
+
+  /*
+    Target: Strong (bold) text within the styled modal body
+    Intent: Ensure bolded text has adequate visual weight to stand out.
+  */
+  #modalBody.prose strong {
+    font-weight: 600; /* Corresponds to `font-semibold`. The plugin default might vary. */
+  }
+  
+  /* 
+    Target: Unordered and Ordered Lists
+    Intent: Ensure list items also benefit from the increased base font size and line height.
+            Adjust margins for lists if necessary.
+  */
+  #modalBody.prose ul,
+  #modalBody.prose ol {
+    margin-top: 1em;
+    margin-bottom: 1.5em;
+  }
+  #modalBody.prose li {
+    margin-top: 0.25em;
     margin-bottom: 0.25em;
   }
-  #modalBody.prose p {
-    margin-bottom: 1.75em;
-    line-height: 1.7;
-  }
-  #modalBody.prose h3,
-  #modalBody.prose h4 {
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-  }
-  #modalBody.prose p > strong {
-    font-weight: 600;
-  }
-  .prose p {
+  #modalBody.prose li p { /* Paragraphs inside list items */
+    margin-top: 0.5em;
     margin-bottom: 0.5em;
   }
 
-  /* 确保模态框在隐藏时不可交互 */
+
+  /* 
+    General Note on Extensibility & Maintainability:
+    - By targeting `#modalBody.prose`, these styles are scoped to the vocabulary modal.
+    - Using the @tailwindcss/typography plugin as a base allows leveraging its comprehensive styling
+      while providing specific overrides where needed.
+    - Comments explain the design intent and logic, aiding future maintenance.
+    - For more complex or reusable prose styling, consider Tailwind's `theme.extend.typography`
+      in `tailwind.config.mjs` or creating dedicated CSS component classes.
+  */
+
+  /* Ensure modal is not interactive when hidden (already present and correct) */
   #vocabularyModal.hidden {
     pointer-events: none;
   }
 </style>
 
 <script define:vars={{ clientVocabularyData }} is:inline>
+  // JavaScript remains unchanged as the request focuses on UI/CSS.
+  // ... (existing script content)
   const wordTriggers = document.querySelectorAll('.word-trigger');
   const modal = document.getElementById('vocabularyModal');
   const modalContentContainer = document.getElementById('modalContentContainer');
@@ -150,57 +243,49 @@ const clientVocabularyData = vocabularyEntries.map(entry => ({
   const modalDate = document.getElementById('modalDate');
   const closeModalButton = document.getElementById('closeModalButton');
 
-  let previouslyFocusedElement = null; // 用于辅助功能，恢复焦点
+  let previouslyFocusedElement = null; 
 
   function openModal(index) {
     const entryData = clientVocabularyData[index];
     const hiddenContentEl = document.getElementById(`content-for-${index}`);
 
     if (entryData && hiddenContentEl && modal && modalContentContainer && modalWordTitle && modalBody && modalDate) {
-      previouslyFocusedElement = document.activeElement; // 保存当前焦点
+      previouslyFocusedElement = document.activeElement; 
 
       modalWordTitle.textContent = entryData.word;
       modalBody.innerHTML = hiddenContentEl.innerHTML;
       modalDate.textContent = `添加日期: ${new Date(entryData.date).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}`;
       
       modal.classList.remove('hidden');
-      // Trigger reflow to enable transition
-      modal.scrollTop; // Reading a property like scrollTop, offsetHeight, etc. forces reflow
+      modal.scrollTop; 
 
-      // Start animation
       modal.classList.remove('opacity-0');
       modalContentContainer.classList.remove('opacity-0', 'scale-95');
       modalContentContainer.classList.add('opacity-100', 'scale-100');
 
-      // Focus management for accessibility
       closeModalButton.focus();
     }
   }
 
   function closeModal() {
     if (modal && modalContentContainer && modalBody && modalWordTitle && modalDate) {
-      // Start animation out
       modal.classList.add('opacity-0');
       modalContentContainer.classList.add('opacity-0', 'scale-95');
       modalContentContainer.classList.remove('opacity-100', 'scale-100');
 
-      // Wait for animation to finish before hiding
       setTimeout(() => {
         modal.classList.add('hidden');
-        // modal.classList.remove('flex'); // flex is not directly set on modal anymore for opening, opacity handles visibility
         
-        // Clear content after hiding to prevent flash if re-opened quickly
         modalBody.innerHTML = ''; 
         modalWordTitle.textContent = '';
         modalDate.textContent = '';
 
-        // Restore focus to the element that opened the modal
         if (previouslyFocusedElement) {
           previouslyFocusedElement.focus();
           previouslyFocusedElement = null;
         }
 
-      }, 300); // Match CSS transition duration (duration-300)
+      }, 300); 
     }
   }
 
@@ -221,7 +306,6 @@ const clientVocabularyData = vocabularyEntries.map(entry => ({
   }
 
   if (modal) {
-    // Close modal if clicking outside the content container (on the overlay)
     modal.addEventListener('click', (event) => {
       if (event.target === modal) { 
         closeModal();
@@ -229,7 +313,6 @@ const clientVocabularyData = vocabularyEntries.map(entry => ({
     });
   }
 
-  // Close modal on Escape key
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
       closeModal();
