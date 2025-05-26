@@ -3,12 +3,7 @@
 @import "tailwindcss/utilities";
 
 @import "katex/dist/katex.min.css";
-/* 使用基础样式重置 */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+
 
 /* 设置根元素默认样式 */
 :root {
@@ -22,9 +17,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-/* 引入 Tailwind 组件样式 */
-@import "tailwindcss/components";
-@import "tailwindcss/utilities.css";
 
 /* KaTeX responsive styles */
 .katex-display {
