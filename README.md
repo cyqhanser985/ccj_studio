@@ -3,11 +3,11 @@
 [![Astro Badge](https://img.shields.io/badge/Astro-vX.X.X-orange?style=for-the-badge&logo=astro)](https://astro.build)
 [![Tailwind CSS Badge](https://img.shields.io/badge/Tailwind_CSS-vX.X.X-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com)
 [![TypeScript Badge](https://img.shields.io/badge/TypeScript-vX.X.X-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
-[![Netlify Status](https://api.netlify.com/api/v1/badges/YOUR_NETLIFY_BADGE_ID/deploy-status)](https://app.netlify.com/sites/YOUR_NETLIFY_SITE_NAME/deploys) <!-- 替换为你的 Netlify 徽章 -->
+[![My network](https://img.shields.io/badge/Astro-vX.X.X-orange?style=for-the-badge&logo=astro)](https://cyqhanser-ccj.netlify.app/)
 
 欢迎来到 **林大反卷门驻地**！这是一个基于 [Astro](https://astro.build/) 构建的现代化、高性能个人博客与学习笔记分享平台，旨在记录知识、分享见解、实践技术。
 
-**当前版本：v1.1.5**
+**当前版本：v1.1.6**
 
 ## ✨ 项目特色
 

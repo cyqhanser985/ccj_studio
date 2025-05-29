@@ -1,6 +1,7 @@
 ---
 import { getCollection, type CollectionEntry } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
+import Pagination from '../components/Pagination.astro'; // 导入分页组件
 
 // 设置为服务器渲染模式
 export const prerender = false;
@@ -22,6 +23,17 @@ const sortedEntries = notesEntries
   .sort((a: NotesEntry, b: NotesEntry) => 
     new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
   );
+
+// --- 分页逻辑开始 ---
+const currentPage = parseInt(Astro.url.searchParams.get('page') || '1');
+const postsPerPage = 8;
+const totalPosts = sortedEntries.length; // sortedEntries 在这里是全部排序后的笔记
+const totalPages = Math.ceil(totalPosts / postsPerPage);
+
+const startIndex = (currentPage - 1) * postsPerPage;
+const endIndex = startIndex + postsPerPage;
+const paginatedEntries = sortedEntries.slice(startIndex, endIndex); // 用于分页展示的条目
+// --- 分页逻辑结束 ---
 
 // 获取所有独特的分类和标签
 const categories = [...new Set(notesEntries
@@ -52,7 +64,7 @@ function formatDate(date: Date): string {
       <!-- 笔记列表 -->
       <div class="lg:col-span-3">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {sortedEntries.map((note: NotesEntry) => (
+          {paginatedEntries.map((note: NotesEntry) => (
             <article class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
               <h2 class="text-xl font-bold mb-3">
                 <a href={`/notes/${note.slug}`} class="text-blue-700 dark:text-blue-400 hover:underline">
@@ -90,6 +102,9 @@ function formatDate(date: Date): string {
             </article>
           ))}
         </div>
+        
+        {/* 使用通用分页组件 */}
+        <Pagination currentPage={currentPage} totalPages={totalPages} baseUrl={Astro.url.pathname} />
       </div>
       
       <!-- 侧边栏 -->
@@ -136,4 +151,4 @@ function formatDate(date: Date): string {
       </div>
     </div>
   </div>
-</Layout> 
+</Layout>

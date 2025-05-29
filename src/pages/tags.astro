@@ -1,6 +1,7 @@
 ---
 import { getCollection, type CollectionEntry } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
+import Pagination from '../components/Pagination.astro'; // 导入分页组件
 
 // 定义条目类型
 type BlogEntry = CollectionEntry<'blog'>;
@@ -52,6 +53,17 @@ const tagStats = Array.from(tagMap.entries())
     };
   })
   .sort((a, b) => b.count - a.count); // 按数量降序排序
+
+// --- 分页逻辑开始 (针对标签列表的“按标签浏览”部分) ---
+const currentPage = parseInt(Astro.url.searchParams.get('page') || '1');
+const tagsPerPage = 6;
+const totalTags = tagStats.length; // tagStats 在这里是全部排序后的标签统计
+const totalPages = Math.ceil(totalTags / tagsPerPage);
+
+const startIndex = (currentPage - 1) * tagsPerPage;
+const endIndex = startIndex + tagsPerPage;
+const paginatedTagStats = tagStats.slice(startIndex, endIndex); // 用于分页展示的标签统计
+// --- 分页逻辑结束 ---
 ---
 
 <Layout title="所有标签">
@@ -74,7 +86,7 @@ const tagStats = Array.from(tagMap.entries())
     <section class="space-y-8">
       <h2 class="text-2xl font-bold text-gray-900 dark:text-white">按标签浏览</h2>
       
-      {tagStats.map(({ tag, displayName, count }) => {
+      {paginatedTagStats.map(({ tag, displayName, count }) => {
         const entries = tagEntryMap.get(tag) || [];
         const sortedEntries = entries.sort((a, b) => 
           new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
@@ -128,6 +140,9 @@ const tagStats = Array.from(tagMap.entries())
         );
       })}
     </section>
+
+    {/* 使用通用分页组件 */}
+    <Pagination currentPage={currentPage} totalPages={totalPages} baseUrl={Astro.url.pathname} />
   </div>
 </Layout>
 
@@ -137,4 +152,4 @@ const tagStats = Array.from(tagMap.entries())
   .tag-size-3 { @apply text-lg; }
   .tag-size-4 { @apply text-xl; }
   .tag-size-5 { @apply text-2xl; }
-</style> 
+</style>

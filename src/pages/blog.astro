@@ -3,6 +3,7 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
 import AuthorCard from '../components/AuthorCard.astro';
 import PostCard from '../components/PostCard.astro';
+import Pagination from '../components/Pagination.astro'; // 导入分页组件
 
 // 设置为服务器渲染模式
 export const prerender = false;
@@ -24,6 +25,17 @@ const sortedEntries = blogEntries
   .sort((a: BlogEntry, b: BlogEntry) => 
     new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
   );
+
+// --- 分页逻辑开始 ---
+const currentPage = parseInt(Astro.url.searchParams.get('page') || '1');
+const postsPerPage = 8;
+const totalPosts = sortedEntries.length; // sortedEntries 在这里是全部排序后的文章
+const totalPages = Math.ceil(totalPosts / postsPerPage);
+
+const startIndex = (currentPage - 1) * postsPerPage;
+const endIndex = startIndex + postsPerPage;
+const paginatedEntries = sortedEntries.slice(startIndex, endIndex); // 用于分页展示的条目
+// --- 分页逻辑结束 ---
 
 // 获取所有独特的分类和标签
 const categories = [...new Set(blogEntries
@@ -57,7 +69,7 @@ function formatDate(date: Date): string {
       <div class="lg:col-span-3">
         <!-- 所有文章使用统一风格展示 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {sortedEntries.map((blog: BlogEntry) => (
+          {paginatedEntries.map((blog: BlogEntry) => (
             <PostCard 
               title={blog.data.title}
               description={blog.data.description}
@@ -68,6 +80,9 @@ function formatDate(date: Date): string {
             />
           ))}
         </div>
+        
+        {/* 使用通用分页组件 */}
+        <Pagination currentPage={currentPage} totalPages={totalPages} baseUrl={Astro.url.pathname} />
       </div>
       
       <!-- 侧边栏 -->

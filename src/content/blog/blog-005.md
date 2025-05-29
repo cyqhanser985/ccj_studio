@@ -2,7 +2,7 @@
 title: "反卷数学局 - 积分不等式的奇妙冒险2"
 description: "泛函不等式大舞台，有胆你就来！"
 date: 2025-05-26T15:41:31.384Z
-category: "积分不等式"
+category: "微分数学"
 tags: ["核函数","柯西-施瓦茨不等式"]
 draft: false
 ---
